@@ -6,7 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Textarea } from "@/components/ui/textarea"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Loader2, Plus, X, ArrowUp, ArrowDown, Settings, FileUp, Check, Pencil } from "lucide-react"
-import { MCPConfig, ServerConfig, getServerType, ServerType, serverTypeMap } from '@/types/mcp-config'
+import { MCPConfig, ServerConfig, getServerType, ServerType, serverTypeMap, fieldNameMap } from '@/types/mcp-config'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 
@@ -346,7 +346,7 @@ export const MCPConfigEditor: React.FC = () => {
   const renderConfigField = (
     serverName: string, 
     serverConfig: ServerConfig,
-    fieldKey: keyof ServerConfig, 
+    fieldKey: string,
     value: unknown,
     isEditing: boolean
   ) => {
@@ -356,14 +356,14 @@ export const MCPConfigEditor: React.FC = () => {
         return (
           <div className="space-y-1">
             {value.map((item, index) => (
-              <div key={index} className="text-sm text-gray-600">{String(item)}</div>
+              <div key={index} className="text-sm text-muted-foreground">{String(item)}</div>
             ))}
           </div>
         )
       }
 
       if (typeof value === 'boolean') {
-        return <div className="text-sm text-gray-600">{value ? '是' : '否'}</div>
+        return <div className="text-sm text-muted-foreground">{value ? '是' : '否'}</div>
       }
 
       if (typeof value === 'object' && value !== null) {
@@ -372,17 +372,17 @@ export const MCPConfigEditor: React.FC = () => {
           return (
             <div className="space-y-1">
               {Object.entries(envVars).map(([key, val]) => (
-                <div key={key} className="text-sm text-gray-600">
+                <div key={key} className="text-sm text-muted-foreground">
                   {key}: {val}
                 </div>
               ))}
             </div>
           )
         }
-        return <div className="text-sm text-gray-600">{JSON.stringify(value, null, 2)}</div>
+        return <div className="text-sm text-muted-foreground">{JSON.stringify(value, null, 2)}</div>
       }
 
-      return <div className="text-sm text-gray-600">{String(value)}</div>
+      return <div className="text-sm text-muted-foreground">{String(value)}</div>
     }
 
     // 编辑模式的原有逻辑
@@ -412,7 +412,7 @@ export const MCPConfigEditor: React.FC = () => {
     }
 
     if (Array.isArray(value)) {
-      return renderArrayField(serverName, serverConfig, fieldKey as string, value)
+      return renderArrayField(serverName, serverConfig, fieldKey, value)
     }
     
     if (typeof value === 'boolean') {
@@ -431,7 +431,7 @@ export const MCPConfigEditor: React.FC = () => {
 
     if (typeof value === 'object' && value !== null) {
       if (fieldKey === 'env') {
-        return renderEnvField(serverName, serverConfig, value)
+        return renderEnvField(serverName, serverConfig, value as Record<string, string>)
       }
       return (
         <Textarea
@@ -591,7 +591,7 @@ export const MCPConfigEditor: React.FC = () => {
               <CardTitle className="text-2xl font-bold">
                 {serverName}
                 <span className="ml-2 text-sm text-muted-foreground">
-                  {getServerType(serverConfig)}
+                  {serverTypeMap[getServerType(serverConfig)]}
                 </span>
               </CardTitle>
               <div className="flex items-center gap-2">
@@ -668,9 +668,9 @@ export const MCPConfigEditor: React.FC = () => {
                 {Object.entries(serverConfig).map(([key, value]) => (
                   <div key={key} className="space-y-2">
                     <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                      {key}
+                      {fieldNameMap[key] || key}
                     </label>
-                    {renderConfigField(serverName, serverConfig, key as keyof ServerConfig, value, editingServers[serverName])}
+                    {renderConfigField(serverName, serverConfig, key, value, editingServers[serverName])}
                   </div>
                 ))}
               </div>

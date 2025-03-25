@@ -20,6 +20,25 @@ export const serverTypeMapReverse = {
     'node': ServerType.NODE
 }
 
+// 字段名称的中文映射
+export const fieldNameMap: Record<string, string> = {
+    'command': '命令',
+    'args': '参数',
+    'env': '环境变量',
+    'autoApprove': '自动确认',
+    'disabled': '禁用',
+    'url': '链接'
+}
+
+export const fieldNameMapReverse: Record<string, string> = {
+    '命令': 'command',
+    '参数': 'args',
+    '环境变量': 'env',
+    '自动确认': 'autoApprove',
+    '禁用': 'disabled',
+    '链接': 'url'
+}
+
 export interface MCPConfig {
     mcpServers: Record<string, ServerConfig>;
     [key: string]: any;
@@ -76,7 +95,8 @@ export function getServerType(config: ServerConfig): ServerType {
         return ServerType.SSE;
     }
     if ('command' in config) {
-        switch (config.command) {
+        const cmd = config.command;
+        switch (cmd) {
             case 'npx':
                 return ServerType.NPX;
             case 'uvx':
@@ -84,9 +104,9 @@ export function getServerType(config: ServerConfig): ServerType {
             case 'node':
                 return ServerType.NODE;
             default:
-                throw new Error(`Unknown command type: ${config.command}`);
+                throw new Error(`未知命令类型: ${cmd}`);
         }
     }
-    throw new Error('Invalid server configuration');
+    throw new Error('无效的服务器配置');
 }
 
