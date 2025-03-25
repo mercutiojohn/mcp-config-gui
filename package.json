@@ -29,6 +29,8 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
+    "electron-trpc": "^0.7.1",
+    "electron-util": "^0.18.1",
     "i18next": "^24.2.3",
     "i18next-browser-languagedetector": "^8.0.4",
     "lucide-react": "^0.483.0",
@@ -77,13 +79,21 @@
       "target": [
         "dmg",
         "zip"
-      ]
+      ],
+      "extendInfo": {
+        "NSDocumentsFolderUsageDescription": "需要访问文档文件夹来打开和保存文件",
+        "NSDesktopFolderUsageDescription": "需要访问桌面文件夹来打开和保存文件",
+        "NSDownloadsFolderUsageDescription": "需要访问下载文件夹来打开和保存文件"
+      }
     },
     "win": {
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64", "ia32"]
+          "arch": [
+            "x64",
+            "ia32"
+          ]
         },
         {
           "target": "portable"

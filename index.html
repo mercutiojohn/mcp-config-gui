@@ -5,9 +5,31 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>MCP Config</title>
+    <style>
+      .mac-title-bar {
+        height: 22px;
+        display: flex;
+        align-items: center;
+      }
+      .app-region-drag {
+        -webkit-app-region: drag;
+      }
+      .ready > .mac-title-bar {
+        display: none;
+      }
+    </style>
   </head>
   <body>
+    <!-- 未加载vite应用时使用预设的 mac 标题栏 -->
+    <div class="mac-title-bar app-region-drag"></div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      // 看root有没有孩子
+      const root = document.getElementById('root')
+      if (root && root.children.length === 0) {
+        document.body.classList.add('ready')
+      }
+    </script>
   </body>
 </html>
