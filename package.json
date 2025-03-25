@@ -3,7 +3,7 @@
   "description": "GUI for MCP configuration",
   "author": "Ryan G.",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.0.1",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
