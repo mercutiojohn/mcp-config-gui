@@ -1,0 +1,39 @@
+{
+  "serverType": {
+    "sse": "SSE",
+    "npx": "npx",
+    "uvx": "uvx",
+    "node": "node"
+  },
+  "fields": {
+    "command": "命令",
+    "args": "参数",
+    "env": "环境变量",
+    "autoApprove": "自动确认",
+    "disabled": "禁用",
+    "url": "URL"
+  },
+  "buttons": {
+    "open": "打开文件",
+    "save": "保存文件",
+    "import": "导入配置",
+    "add": "添加服务器",
+    "processing": "处理中..."
+  },
+  "dialog": {
+    "serverSettings": "服务器设置",
+    "serverType": "服务器类型",
+    "selectServerType": "选择服务器类型",
+    "importConfig": "导入配置",
+    "importPlaceholder": "请粘贴 MCP 配置 JSON，支持完整配置或单个服务器配置"
+  },
+  "placeholders": {
+    "newServerName": "新服务器名称"
+  },
+  "errors": {
+    "unknownCommandType": "未知命令类型: {{cmd}}",
+    "invalidServerConfig": "无效的服务器配置",
+    "openFileFailed": "打开文件失败：{{message}}",
+    "saveFileFailed": "保存文件失败：{{message}}"
+  }
+} 

@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -32,6 +33,7 @@ declare global {
 const { ipcRenderer } = window.require ? window.require('electron') : { ipcRenderer: null }
 
 export const MCPConfigEditor: React.FC = () => {
+  const { t } = useTranslation()
   const [config, setConfig] = useState<MCPConfig | null>(null)
   const [currentPath, setCurrentPath] = useState<string>('')
   const [loading, setLoading] = useState(false)
@@ -50,7 +52,7 @@ export const MCPConfigEditor: React.FC = () => {
         setCurrentPath(result.path)
       }
     } catch (err) {
-      setError('打开文件失败：' + (err as Error).message)
+      setError(t('errors.openFileFailed', { message: (err as Error).message }))
     } finally {
       setLoading(false)
     }
@@ -66,7 +68,7 @@ export const MCPConfigEditor: React.FC = () => {
         path: currentPath
       })
     } catch (err) {
-      setError('保存文件失败：' + (err as Error).message)
+      setError(t('errors.saveFileFailed', { message: (err as Error).message }))
     } finally {
       setLoading(false)
     }
@@ -485,30 +487,30 @@ export const MCPConfigEditor: React.FC = () => {
             variant="default"
             onClick={handleOpenFile}
           >
-            打开配置文件
+            {t('buttons.open')}
           </Button>
           <Dialog>
             <DialogTrigger asChild>
               <Button variant="outline">
                 <FileUp className="h-4 w-4 mr-2" />
-                粘贴导入
+                {t('buttons.import')}
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>导入配置</DialogTitle>
+                <DialogTitle>{t('dialog.importConfig')}</DialogTitle>
               </DialogHeader>
               <div className="grid gap-4 py-4">
                 <div className="space-y-2">
                   <Textarea
-                    placeholder="请粘贴 MCP 配置 JSON，支持完整配置或单个服务器配置"
+                    placeholder={t('dialog.importPlaceholder')}
                     value={importConfig}
                     onChange={(e) => setImportConfig(e.target.value)}
                     className="min-h-[200px]"
                   />
                 </div>
                 <Button onClick={handleImportConfig}>
-                  导入
+                  {t('buttons.import')}
                 </Button>
               </div>
             </DialogContent>
@@ -536,9 +538,9 @@ export const MCPConfigEditor: React.FC = () => {
             {loading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                处理中...
+                {t('buttons.processing')}
               </>
-            ) : '打开'}
+            ) : t('buttons.open')}
           </Button>
           <Button 
             variant="default"
@@ -548,32 +550,32 @@ export const MCPConfigEditor: React.FC = () => {
             {loading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                处理中...
+                {t('buttons.processing')}
               </>
-            ) : '保存'}
+            ) : t('buttons.save')}
           </Button>
           <Dialog>
             <DialogTrigger asChild>
               <Button variant="outline">
                 <FileUp className="h-4 w-4 mr-2" />
-                导入
+                {t('buttons.import')}
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>导入配置</DialogTitle>
+                <DialogTitle>{t('dialog.importConfig')}</DialogTitle>
               </DialogHeader>
               <div className="grid gap-4 py-4">
                 <div className="space-y-2">
                   <Textarea
-                    placeholder="请粘贴 MCP 配置 JSON，支持完整配置或单个服务器配置"
+                    placeholder={t('dialog.importPlaceholder')}
                     value={importConfig}
                     onChange={(e) => setImportConfig(e.target.value)}
                     className="min-h-[200px]"
                   />
                 </div>
                 <Button onClick={handleImportConfig}>
-                  导入
+                  {t('buttons.import')}
                 </Button>
               </div>
             </DialogContent>
@@ -581,7 +583,7 @@ export const MCPConfigEditor: React.FC = () => {
         </div>
         <div className="flex items-center gap-2">
           <Input
-            placeholder="新服务器名称"
+            placeholder={t('placeholders.newServerName')}
             value={newServerName}
             onChange={(e) => setNewServerName(e.target.value)}
           />
@@ -591,16 +593,16 @@ export const MCPConfigEditor: React.FC = () => {
             disabled={!newServerName.trim()}
           >
             <Plus className="h-4 w-4 mr-2" />
-            添加服务器
+            {t('buttons.add')}
           </Button>
         </div>
       </div>
       
-      <div className="space-y-6">
+      <div className="space-y-6 grid grid-cols-2 gap-4">
         {Object.entries(config.mcpServers).map(([serverName, serverConfig]) => (
           <Card key={serverName}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-2xl font-bold">
+              <CardTitle className="text-lg font-bold truncate">
                 {serverName}
                 <span className="ml-2 text-sm text-muted-foreground">
                   {serverTypeMap[getServerType(serverConfig)]}
@@ -615,11 +617,11 @@ export const MCPConfigEditor: React.FC = () => {
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
-                      <DialogTitle>服务器设置</DialogTitle>
+                      <DialogTitle>{t('dialog.serverSettings')}</DialogTitle>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
                       <div className="space-y-2">
-                        <h4 className="font-medium">服务器类型</h4>
+                        <h4 className="font-medium">{t('dialog.serverType')}</h4>
                         <Select
                           value={getServerType(serverConfig)}
                           onValueChange={(newType: ServerType) => {
@@ -641,7 +643,7 @@ export const MCPConfigEditor: React.FC = () => {
                           }}
                         >
                           <SelectTrigger>
-                            <SelectValue placeholder="选择服务器类型" />
+                            <SelectValue placeholder={t('dialog.selectServerType')} />
                           </SelectTrigger>
                           <SelectContent>
                             {Object.values(ServerType).map((type) => (
@@ -676,7 +678,7 @@ export const MCPConfigEditor: React.FC = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col gap-2">
                 {Object.entries(serverConfig).map(([key, value]) => (
                   <div key={key} className="space-y-2">
                     <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">

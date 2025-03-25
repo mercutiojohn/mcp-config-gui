@@ -1,3 +1,6 @@
+import i18next from 'i18next';
+import '../i18n/i18n';
+
 // Server Types
 export enum ServerType {
     SSE = 'sse',
@@ -7,10 +10,10 @@ export enum ServerType {
 }
 
 export const serverTypeMap = {
-    [ServerType.SSE]: 'SSE',
-    [ServerType.NPX]: 'npx',
-    [ServerType.UVX]: 'uvx',
-    [ServerType.NODE]: 'node'
+    [ServerType.SSE]: i18next.t('serverType.sse'),
+    [ServerType.NPX]: i18next.t('serverType.npx'),
+    [ServerType.UVX]: i18next.t('serverType.uvx'),
+    [ServerType.NODE]: i18next.t('serverType.node')
 }
 
 export const serverTypeMapReverse = {
@@ -20,23 +23,23 @@ export const serverTypeMapReverse = {
     'node': ServerType.NODE
 }
 
-// 字段名称的中文映射
+// 字段名称的映射
 export const fieldNameMap: Record<string, string> = {
-    'command': '命令',
-    'args': '参数',
-    'env': '环境变量',
-    'autoApprove': '自动确认',
-    'disabled': '禁用',
-    'url': '链接'
+    'command': i18next.t('fields.command'),
+    'args': i18next.t('fields.args'),
+    'env': i18next.t('fields.env'),
+    'autoApprove': i18next.t('fields.autoApprove'),
+    'disabled': i18next.t('fields.disabled'),
+    'url': i18next.t('fields.url')
 }
 
 export const fieldNameMapReverse: Record<string, string> = {
-    '命令': 'command',
-    '参数': 'args',
-    '环境变量': 'env',
-    '自动确认': 'autoApprove',
-    '禁用': 'disabled',
-    '链接': 'url'
+    [i18next.t('fields.command')]: 'command',
+    [i18next.t('fields.args')]: 'args',
+    [i18next.t('fields.env')]: 'env',
+    [i18next.t('fields.autoApprove')]: 'autoApprove',
+    [i18next.t('fields.disabled')]: 'disabled',
+    [i18next.t('fields.url')]: 'url'
 }
 
 export interface MCPConfig {
@@ -104,9 +107,9 @@ export function getServerType(config: ServerConfig): ServerType {
             case 'node':
                 return ServerType.NODE;
             default:
-                throw new Error(`未知命令类型: ${cmd}`);
+                throw new Error(i18next.t('errors.unknownCommandType', { cmd }));
         }
     }
-    throw new Error('无效的服务器配置');
+    throw new Error(i18next.t('errors.invalidServerConfig'));
 }
 
