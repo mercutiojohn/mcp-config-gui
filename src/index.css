@@ -155,3 +155,24 @@ body {
 .app-region-no-drag {
   -webkit-app-region: no-drag;
 }
+
+/* macOS 毛玻璃效果类 */
+.vibrancy-header-custom {
+  -webkit-app-region: drag;
+  background: rgba(255, 255, 255, 0.1) !important;
+  /* backdrop-filter: blur(10px) saturate(180%); */
+}
+
+.vibrancy-content-custom {
+  background: rgba(255, 255, 255, 0.5) !important;
+  /* backdrop-filter: blur(20px) saturate(180%); */
+}
+
+/* 暗色主题 */
+[data-theme='dark'] .vibrancy-header-custom {
+  background: rgba(0, 0, 0, 0.2) !important;
+}
+
+[data-theme='dark'] .vibrancy-content-custom {
+  background: rgba(0, 0, 0, 0.3) !important;
+}

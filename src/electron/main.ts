@@ -19,7 +19,7 @@ function createWindow() {
           trafficLightPosition: { x: 10, y: 10 }, // 可以调整红绿灯位置
           transparent: true, // 启用透明
           backgroundColor: '#00ffffff', // 设置透明背景
-          vibrancy: 'under-window' // 添加毛玻璃效果
+          // vibrancy: 'under-window' // 添加毛玻璃效果
         }
       : {
           frame: false // Windows 使用自定义框架
