@@ -18,14 +18,19 @@
     "save": "保存文件",
     "import": "导入配置",
     "add": "添加服务器",
-    "processing": "处理中..."
+    "delete": "删除服务器",
+    "processing": "处理中...",
+    "editDetails": "编辑详情",
+    "close": "关闭",
+    "ok": "确定"
   },
   "dialog": {
     "serverSettings": "服务器设置",
     "serverType": "服务器类型",
     "selectServerType": "选择服务器类型",
     "importConfig": "导入配置",
-    "importPlaceholder": "请粘贴 MCP 配置 JSON，支持完整配置或单个服务器配置"
+    "importPlaceholder": "请粘贴 MCP 配置 JSON，支持完整配置或单个服务器配置",
+    "serverConfig": "服务器配置"
   },
   "placeholders": {
     "newServerName": "新服务器名称"

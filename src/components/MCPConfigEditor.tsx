@@ -6,10 +6,11 @@ import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Textarea } from "@/components/ui/textarea"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Loader2, Plus, X, ArrowUp, ArrowDown, Settings, FileUp, Check, Pencil } from "lucide-react"
+import { Loader2, Plus, X, ArrowUp, ArrowDown, Settings, FileUp, Check, Pencil, Trash } from "lucide-react"
 import { MCPConfig, ServerConfig, getServerType, ServerType, serverTypeMap, fieldNameMap } from '@/types/mcp-config'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { cn } from '@/lib/utils'
 
 // 添加文本截断工具函数
 const truncateText = (text: string, maxLength: number = 50) => {
@@ -40,7 +41,6 @@ export const MCPConfigEditor: React.FC = () => {
   const [error, setError] = useState<string | null>(null)
   const [newServerName, setNewServerName] = useState('')
   const [importConfig, setImportConfig] = useState('')
-  const [editingServers, setEditingServers] = useState<Record<string, boolean>>({})
 
   const handleOpenFile = async () => {
     try {
@@ -221,7 +221,7 @@ export const MCPConfigEditor: React.FC = () => {
   const handleImportConfig = () => {
     try {
       let parsedConfig = JSON.parse(importConfig)
-      
+
       // 如果是完整的 MCP 配置格式
       if ('mcpServers' in parsedConfig) {
         setConfig(prev => ({
@@ -231,7 +231,7 @@ export const MCPConfigEditor: React.FC = () => {
             ...parsedConfig.mcpServers
           }
         }))
-      } 
+      }
       // 如果是单个服务器配置
       else {
         const serverName = Object.keys(parsedConfig)[0]
@@ -249,13 +249,6 @@ export const MCPConfigEditor: React.FC = () => {
     } catch (err) {
       setError('导入配置失败：' + (err as Error).message)
     }
-  }
-
-  const toggleEditing = (serverName: string) => {
-    setEditingServers(prev => ({
-      ...prev,
-      [serverName]: !prev[serverName]
-    }))
   }
 
   const renderArrayField = (
@@ -355,7 +348,7 @@ export const MCPConfigEditor: React.FC = () => {
   )
 
   const renderConfigField = (
-    serverName: string, 
+    serverName: string,
     serverConfig: ServerConfig,
     fieldKey: string,
     value: unknown,
@@ -428,7 +421,7 @@ export const MCPConfigEditor: React.FC = () => {
     if (Array.isArray(value)) {
       return renderArrayField(serverName, serverConfig, fieldKey, value)
     }
-    
+
     if (typeof value === 'boolean') {
       return (
         <Checkbox
@@ -483,7 +476,7 @@ export const MCPConfigEditor: React.FC = () => {
     return (
       <div className="flex flex-col items-center justify-center h-screen">
         <div className="flex gap-2">
-          <Button 
+          <Button
             variant="default"
             onClick={handleOpenFile}
           >
@@ -527,10 +520,10 @@ export const MCPConfigEditor: React.FC = () => {
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
-      
+
       <div className="flex justify-between mb-6">
         <div className="flex gap-2">
-          <Button 
+          <Button
             variant="outline"
             onClick={handleOpenFile}
             disabled={loading}
@@ -542,7 +535,7 @@ export const MCPConfigEditor: React.FC = () => {
               </>
             ) : t('buttons.open')}
           </Button>
-          <Button 
+          <Button
             variant="default"
             onClick={handleSaveFile}
             disabled={loading || !config}
@@ -597,11 +590,11 @@ export const MCPConfigEditor: React.FC = () => {
           </Button>
         </div>
       </div>
-      
+
       <div className="space-y-6 grid grid-cols-2 gap-4">
         {Object.entries(config.mcpServers).map(([serverName, serverConfig]) => (
           <Card key={serverName}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 !pt-1">
               <CardTitle className="text-lg font-bold truncate">
                 {serverName}
                 <span className="ml-2 text-sm text-muted-foreground">
@@ -609,84 +602,117 @@ export const MCPConfigEditor: React.FC = () => {
                 </span>
               </CardTitle>
               <div className="flex items-center gap-2">
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                      <Settings className="h-4 w-4" />
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>{t('dialog.serverSettings')}</DialogTitle>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                      <div className="space-y-2">
-                        <h4 className="font-medium">{t('dialog.serverType')}</h4>
-                        <Select
-                          value={getServerType(serverConfig)}
-                          onValueChange={(newType: ServerType) => {
-                            let newConfig: ServerConfig
-                            if (newType === ServerType.SSE) {
-                              newConfig = {
-                                url: '',
-                                autoApprove: serverConfig.autoApprove || []
+                <div className="">
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" size="sm" className="w-full">
+                        <Settings className="h-3 w-3 mr-1" />
+                        {t('buttons.editDetails')}
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+                      <DialogHeader>
+                        <DialogTitle>{t('dialog.serverSettings')} - {serverName}</DialogTitle>
+                      </DialogHeader>
+                      <div className="grid gap-4 py-4">
+                        <div className="space-y-4">
+                          <h4 className="font-medium">{t('dialog.serverType')}</h4>
+                          <Select
+                            value={getServerType(serverConfig)}
+                            onValueChange={(newType: ServerType) => {
+                              let newConfig: ServerConfig
+                              if (newType === ServerType.SSE) {
+                                newConfig = {
+                                  url: '',
+                                  autoApprove: serverConfig.autoApprove || []
+                                }
+                              } else {
+                                newConfig = {
+                                  command: newType as 'npx' | 'uvx' | 'node',
+                                  args: [],
+                                  env: {},
+                                  autoApprove: serverConfig.autoApprove || []
+                                }
                               }
-                            } else {
-                              newConfig = {
-                                command: newType as 'npx' | 'uvx' | 'node',
-                                args: [],
-                                env: {},
-                                autoApprove: serverConfig.autoApprove || []
-                              }
-                            }
-                            updateServerConfig(serverName, newConfig)
-                          }}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder={t('dialog.selectServerType')} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {Object.values(ServerType).map((type) => (
-                              <SelectItem key={type} value={type}>
-                                {serverTypeMap[type]}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                              updateServerConfig(serverName, newConfig)
+                            }}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder={t('dialog.selectServerType')} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {Object.values(ServerType).map((type) => (
+                                <SelectItem key={type} value={type}>
+                                  {serverTypeMap[type]}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+
+                          <div className="space-y-4 mt-6">
+                            <h4 className="font-medium">{t('dialog.serverConfig')}</h4>
+                            <div className="grid gap-4">
+                              {Object.entries(serverConfig).map(([key, value]) => {
+                                // const isArrayField = Array.isArray(value);
+                                // const isObjectField = !isArrayField && typeof value === 'object' && value !== null;
+                                const fieldClass = cn(
+                                  `space-y-2 p-3 border rounded-md`,
+                                  // `${isArrayField ? 'border-blue-200 bg-blue-50' : isObjectField ? 'border-green-200 bg-green-50' : 'border-gray-200'}`
+                                );
+
+                                return (
+                                  <div key={key} className={fieldClass}>
+                                    <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                      {fieldNameMap[key] || key}
+                                    </label>
+                                    {renderConfigField(serverName, serverConfig, key, value, true)}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        </div>
+
                       </div>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => toggleEditing(serverName)}
-                >
-                  {editingServers[serverName] ? (
-                    <Check className="h-4 w-4" />
-                  ) : (
-                    <Pencil className="h-4 w-4" />
-                  )}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => deleteServer(serverName)}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
+
+                      <div className="flex justify-between gap-2 mt-6">
+                        <Button
+                          variant="destructive"
+                          onClick={() => deleteServer(serverName)}
+                        >
+                          <Trash className="h-4 w-4" />
+                          {t('buttons.delete')}
+                        </Button>
+                        <DialogTrigger asChild>
+
+                          <Button variant="outline">
+                            <Check className="h-4 w-4" />
+                            {t('buttons.ok')}
+                          </Button>
+                        </DialogTrigger>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
               </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className=''>
               <div className="flex flex-col gap-2">
-                {Object.entries(serverConfig).map(([key, value]) => (
-                  <div key={key} className="space-y-2">
-                    <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                      {fieldNameMap[key] || key}
-                    </label>
-                    {renderConfigField(serverName, serverConfig, key, value, editingServers[serverName])}
-                  </div>
-                ))}
+                {Object.entries(serverConfig).map(([key, value]) => {
+                  // 只显示最重要的几个字段，并根据类型进行不同的可视化处理
+                  // if (['command', 'args', 'url', 'autoApprove'].includes(key)) {
+                  return (
+                    <div key={key} className="space-y-1">
+                      <label className="text-xs font-medium text-muted-foreground">
+                        {fieldNameMap[key] || key}
+                      </label>
+                      {renderConfigField(serverName, serverConfig, key, value, false)}
+                    </div>
+                  );
+                }
+                  // return null; // 隐藏其他不那么重要的字段
+                  // }
+                )}
               </div>
             </CardContent>
           </Card>

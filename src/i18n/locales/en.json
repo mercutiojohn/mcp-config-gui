@@ -18,14 +18,19 @@
     "save": "Save File",
     "import": "Import Config",
     "add": "Add Server",
-    "processing": "Processing..."
+    "delete": "Delete Server",
+    "processing": "Processing...",
+    "editDetails": "Edit Details",
+    "close": "Close",
+    "ok": "OK"
   },
   "dialog": {
     "serverSettings": "Server Settings",
     "serverType": "Server Type",
     "selectServerType": "Select Server Type",
     "importConfig": "Import Configuration",
-    "importPlaceholder": "Please paste MCP configuration JSON, supports full config or single server config"
+    "importPlaceholder": "Please paste MCP configuration JSON, supports full config or single server config",
+    "serverConfig": "Server Configuration"
   },
   "placeholders": {
     "newServerName": "New Server Name"
