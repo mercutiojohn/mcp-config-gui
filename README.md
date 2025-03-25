@@ -1,6 +1,6 @@
 # MCP Config GUI
 
-A graphical user interface tool for managing and editing MCP (Multi-Cloud Provider) configurations.
+A graphical user interface tool for managing and editing MCP (Model Context Protocol) configurations.
 
 ![MCP Config GUI](./screenshots/app-screenshot.png)
 
