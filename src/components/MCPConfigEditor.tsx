@@ -10,6 +10,14 @@ import { MCPConfig, ServerConfig, getServerType, ServerType, serverTypeMap, fiel
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 
+// 添加文本截断工具函数
+const truncateText = (text: string, maxLength: number = 50) => {
+  if (typeof text !== 'string') {
+    text = String(text);
+  }
+  return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
+}
+
 // 声明全局 electronAPI
 declare global {
   interface Window {
@@ -259,6 +267,7 @@ export const MCPConfigEditor: React.FC = () => {
         <div key={index} className="flex items-center gap-2">
           <Input
             value={item}
+            title={item}
             onChange={(e) => handleArrayItemChange(serverName, serverConfig, fieldKey as keyof ServerConfig, index, e.target.value)}
           />
           <Button
@@ -356,7 +365,9 @@ export const MCPConfigEditor: React.FC = () => {
         return (
           <div className="space-y-1">
             {value.map((item, index) => (
-              <div key={index} className="text-sm text-muted-foreground">{String(item)}</div>
+              <div key={index} className="text-sm text-muted-foreground truncate hover:text-clip" title={String(item)}>
+                {String(item)}
+              </div>
             ))}
           </div>
         )
@@ -372,17 +383,18 @@ export const MCPConfigEditor: React.FC = () => {
           return (
             <div className="space-y-1">
               {Object.entries(envVars).map(([key, val]) => (
-                <div key={key} className="text-sm text-muted-foreground">
-                  {key}: {val}
+                <div key={key} className="text-sm text-muted-foreground truncate hover:text-clip" title={`${key}: ${val}`}>
+                  {`${key}: ${val}`}
                 </div>
               ))}
             </div>
           )
         }
-        return <div className="text-sm text-muted-foreground">{JSON.stringify(value, null, 2)}</div>
+        const stringified = JSON.stringify(value, null, 2)
+        return <div className="text-sm text-muted-foreground truncate hover:text-clip" title={stringified}>{stringified}</div>
       }
 
-      return <div className="text-sm text-muted-foreground">{String(value)}</div>
+      return <div className="text-sm text-muted-foreground truncate hover:text-clip" title={String(value)}>{String(value)}</div>
     }
 
     // 编辑模式的原有逻辑
