@@ -3,6 +3,8 @@ import * as path from 'path'
 import * as fs from 'fs'
 import { enable } from '@electron/remote/main'
 
+const PORT = 5173
+
 // 开发环境判断
 const isDev = process.env.NODE_ENV === 'development' || process.env.DEBUG_PROD === 'true'
 
@@ -24,7 +26,7 @@ function createWindow() {
   if (isDev) {
     win.webContents.openDevTools()
     // 使用 Vite 开发服务器的 URL
-    win.loadURL('http://localhost:5175')
+    win.loadURL(`http://localhost:${PORT}`)
   } else {
     // 修改生产环境加载路径
     win.loadFile(path.join(__dirname, '../dist/index.html'))

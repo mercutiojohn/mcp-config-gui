@@ -37,6 +37,7 @@ const electron_1 = require("electron");
 const path = __importStar(require("path"));
 const fs = __importStar(require("fs"));
 const main_1 = require("@electron/remote/main");
+const PORT = 5173;
 // 开发环境判断
 const isDev = process.env.NODE_ENV === 'development' || process.env.DEBUG_PROD === 'true';
 function createWindow() {
@@ -44,9 +45,9 @@ function createWindow() {
         width: 1200,
         height: 800,
         webPreferences: {
-            nodeIntegration: true,
-            contextIsolation: false,
-            webSecurity: !isDev // 开发环境下关闭 web 安全限制
+            nodeIntegration: false,
+            contextIsolation: true,
+            preload: path.join(__dirname, 'preload.js')
         }
     });
     // 在这里启用 remote
@@ -55,7 +56,7 @@ function createWindow() {
     if (isDev) {
         win.webContents.openDevTools();
         // 使用 Vite 开发服务器的 URL
-        win.loadURL('http://localhost:5175');
+        win.loadURL(`http://localhost:${PORT}`);
     }
     else {
         // 修改生产环境加载路径

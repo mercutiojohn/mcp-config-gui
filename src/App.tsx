@@ -1,5 +1,4 @@
 import { MCPConfigEditor } from './components/MCPConfigEditor'
-// import './App.css'
 
 function App() {
   return (

@@ -1,4 +1,11 @@
 import React, { useState } from 'react'
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Textarea } from "@/components/ui/textarea"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Loader2 } from "lucide-react"
 
 // 声明全局 electronAPI
 declare global {
@@ -9,6 +16,9 @@ declare global {
     }
   }
 }
+
+// 使用 window.electron 代替直接导入
+const { ipcRenderer } = window.require ? window.require('electron') : { ipcRenderer: null }
 
 interface MCPConfig {
   mcpServers: {
@@ -77,88 +87,102 @@ export const MCPConfigEditor: React.FC = () => {
   if (!config) {
     return (
       <div className="flex flex-col items-center justify-center h-screen">
-        <button 
-          className="px-4 py-2 bg-blue-500 text-white rounded"
+        <Button 
+          variant="default"
           onClick={handleOpenFile}
         >
           打开配置文件
-        </button>
+        </Button>
       </div>
     )
   }
 
   return (
-    <div className="p-4">
+    <div className="container mx-auto p-6">
       {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-          {error}
-        </div>
+        <Alert variant="destructive" className="mb-4">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
       
-      <div className="flex justify-between mb-4">
-        <button 
-          className="px-4 py-2 bg-blue-500 text-white rounded disabled:opacity-50"
+      <div className="flex justify-between mb-6">
+        <Button 
+          variant="outline"
           onClick={handleOpenFile}
           disabled={loading}
         >
-          {loading ? '处理中...' : '打开'}
-        </button>
-        <button 
-          className="px-4 py-2 bg-green-500 text-white rounded disabled:opacity-50"
+          {loading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              处理中...
+            </>
+          ) : '打开'}
+        </Button>
+        <Button 
+          variant="default"
           onClick={handleSaveFile}
           disabled={loading || !config}
         >
-          {loading ? '处理中...' : '保存'}
-        </button>
+          {loading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              处理中...
+            </>
+          ) : '保存'}
+        </Button>
       </div>
       
-      <div className="space-y-4">
+      <div className="space-y-6">
         {Object.entries(config.mcpServers).map(([serverName, serverConfig]) => (
-          <div key={serverName} className="border p-4 rounded">
-            <h3 className="font-bold">{serverName}</h3>
-            <div className="grid grid-cols-2 gap-2 mt-2">
-              {Object.entries(serverConfig).map(([key, value]) => (
-                <div key={key}>
-                  <label className="block text-sm font-medium">{key}</label>
-                  {Array.isArray(value) ? (
-                    <textarea
-                      className="w-full border rounded p-2"
-                      value={value.join('\n')}
-                      onChange={e => {
-                        const newValue = e.target.value.split('\n')
-                        updateServerConfig(serverName, {
-                          ...serverConfig,
-                          [key]: newValue
-                        })
-                      }}
-                    />
-                  ) : typeof value === 'boolean' ? (
-                    <input
-                      type="checkbox"
-                      checked={value}
-                      onChange={e => {
-                        updateServerConfig(serverName, {
-                          ...serverConfig,
-                          [key]: e.target.checked
-                        })
-                      }}
-                    />
-                  ) : (
-                    <input
-                      className="w-full border rounded p-2"
-                      value={value}
-                      onChange={e => {
-                        updateServerConfig(serverName, {
-                          ...serverConfig,
-                          [key]: e.target.value
-                        })
-                      }}
-                    />
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
+          <Card key={serverName}>
+            <CardHeader>
+              <CardTitle>{serverName}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-4">
+                {Object.entries(serverConfig).map(([key, value]) => (
+                  <div key={key} className="space-y-2">
+                    <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                      {key}
+                    </label>
+                    {Array.isArray(value) ? (
+                      <Textarea
+                        value={value.join('\n')}
+                        onChange={e => {
+                          const newValue = e.target.value.split('\n')
+                          updateServerConfig(serverName, {
+                            ...serverConfig,
+                            [key]: newValue
+                          })
+                        }}
+                      />
+                    ) : typeof value === 'boolean' ? (
+                      <Checkbox
+                        checked={value}
+                        onCheckedChange={(checked) => {
+                          updateServerConfig(serverName, {
+                            ...serverConfig,
+                            [key]: checked
+                          })
+                        }}
+                      />
+                    ) : (
+                      <Input
+                        type="text"
+                        value={value as string}
+                        onChange={e => {
+                          updateServerConfig(serverName, {
+                            ...serverConfig,
+                            [key]: e.target.value
+                          })
+                        }}
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         ))}
       </div>
     </div>
