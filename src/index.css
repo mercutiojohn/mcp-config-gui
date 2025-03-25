@@ -130,3 +130,28 @@
     @apply bg-background text-foreground;
   }
 }
+
+body {
+  /* @apply app-region-drag; */
+  background: transparent;
+}
+
+/* 添加窗口拖拽区域相关样式 */
+.app-region-drag {
+  -webkit-app-region: drag;
+  /* 防止文本被选中 */
+  user-select: none;
+}
+
+/* 防止拖拽区域内的按钮等交互元素被影响 */
+.app-region-drag button,
+.app-region-drag input,
+.app-region-drag select,
+.app-region-drag [role="button"] {
+  -webkit-app-region: no-drag;
+}
+
+/* 可选：添加不可拖拽区域的样式 */
+.app-region-no-drag {
+  -webkit-app-region: no-drag;
+}

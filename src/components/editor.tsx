@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Textarea } from "@/components/ui/textarea"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Loader2, Plus, X, ArrowUp, ArrowDown, Settings, FileUp, Check, Trash } from "lucide-react"
+import { Loader2, Plus, X, ArrowUp, ArrowDown, Settings, FileUp, Check, Trash, Minus, Square, X as Close, Maximize2 } from "lucide-react"
 import { MCPConfig, ServerConfig, getServerType, ServerType, serverTypeMap, fieldNameMap } from '@/types/mcp-config'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
@@ -19,6 +19,13 @@ declare global {
     electronAPI: {
       openFile: () => Promise<any>
       saveFile: (data: any) => Promise<boolean>
+      windowControl: {
+        minimize: () => Promise<void>
+        maximize: () => Promise<void>
+        close: () => Promise<void>
+        isMaximized: () => Promise<boolean>
+      }
+      platform: string
     }
     require?: any
   }
@@ -508,209 +515,203 @@ export const MCPConfigEditor: React.FC = () => {
   }
 
   return (
-    <div className="container mx-auto p-6">
-      {error && (
-        <Alert variant="destructive" className="mb-4">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
+    <div className="flex-1 overflow-y-auto">
+      <div className="container mx-auto p-6">
+        {error && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
 
-      <div className="flex justify-between mb-6">
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={handleOpenFile}
-            disabled={loading}
-          >
-            {loading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {t('buttons.processing')}
-              </>
-            ) : t('buttons.open')}
-          </Button>
-          <Button
-            variant="default"
-            onClick={handleSaveFile}
-            disabled={loading || !config}
-          >
-            {loading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {t('buttons.processing')}
-              </>
-            ) : t('buttons.save')}
-          </Button>
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="outline">
-                <FileUp className="h-4 w-4 mr-2" />
-                {t('buttons.import')}
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>{t('dialog.importConfig')}</DialogTitle>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="space-y-2">
-                  <Textarea
-                    placeholder={t('dialog.importPlaceholder')}
-                    value={importConfig}
-                    onChange={(e) => setImportConfig(e.target.value)}
-                    className="min-h-[200px]"
-                  />
-                </div>
-                <Button onClick={handleImportConfig}>
+        <div className="flex justify-between mb-6">
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={handleOpenFile}
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {t('buttons.processing')}
+                </>
+              ) : t('buttons.open')}
+            </Button>
+            <Button
+              variant="default"
+              onClick={handleSaveFile}
+              disabled={loading || !config}
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {t('buttons.processing')}
+                </>
+              ) : t('buttons.save')}
+            </Button>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="outline">
+                  <FileUp className="h-4 w-4 mr-2" />
                   {t('buttons.import')}
                 </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>{t('dialog.importConfig')}</DialogTitle>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="space-y-2">
+                    <Textarea
+                      placeholder={t('dialog.importPlaceholder')}
+                      value={importConfig}
+                      onChange={(e) => setImportConfig(e.target.value)}
+                      className="min-h-[200px]"
+                    />
+                  </div>
+                  <Button onClick={handleImportConfig}>
+                    {t('buttons.import')}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+          <div className="flex items-center gap-2">
+            <Input
+              placeholder={t('placeholders.newServerName')}
+              value={newServerName}
+              onChange={(e) => setNewServerName(e.target.value)}
+            />
+            <Button
+              variant="outline"
+              onClick={addNewServer}
+              disabled={!newServerName.trim()}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              {t('buttons.add')}
+            </Button>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Input
-            placeholder={t('placeholders.newServerName')}
-            value={newServerName}
-            onChange={(e) => setNewServerName(e.target.value)}
-          />
-          <Button
-            variant="outline"
-            onClick={addNewServer}
-            disabled={!newServerName.trim()}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            {t('buttons.add')}
-          </Button>
-        </div>
-      </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        {Object.entries(config.mcpServers).map(([serverName, serverConfig]) => (
-          <Card key={serverName}>
-            <CardHeader className="flex flex-row items-center justify-between pb-2 !pt-1">
-              <CardTitle className="text-lg font-bold truncate">
-                {serverName}
-                <span className="ml-2 text-sm text-muted-foreground">
-                  {serverTypeMap[getServerType(serverConfig)]}
-                </span>
-              </CardTitle>
-              <div className="flex items-center gap-2">
-                <div className="">
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button variant="outline" size="sm" className="w-full">
-                        <Settings className="h-3 w-3 mr-1" />
-                        {t('buttons.editDetails')}
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-                      <DialogHeader>
-                        <DialogTitle>{t('dialog.serverSettings')} - {serverName}</DialogTitle>
-                      </DialogHeader>
-                      <div className="grid gap-4 py-4">
-                        <div className="space-y-4">
-                          <h4 className="font-medium">{t('dialog.serverType')}</h4>
-                          <Select
-                            value={getServerType(serverConfig)}
-                            onValueChange={(newType: ServerType) => {
-                              let newConfig: ServerConfig
-                              if (newType === ServerType.SSE) {
-                                newConfig = {
-                                  url: '',
-                                  autoApprove: serverConfig.autoApprove || []
+        <div className="grid grid-cols-2 gap-4">
+          {Object.entries(config.mcpServers).map(([serverName, serverConfig]) => (
+            <Card key={serverName}>
+              <CardHeader className="flex flex-row items-center justify-between pb-2 !pt-1">
+                <CardTitle className="text-lg font-bold truncate">
+                  {serverName}
+                  <span className="ml-2 text-sm text-muted-foreground">
+                    {serverTypeMap[getServerType(serverConfig)]}
+                  </span>
+                </CardTitle>
+                <div className="flex items-center gap-2">
+                  <div className="">
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" size="sm" className="w-full">
+                          <Settings className="h-3 w-3 mr-1" />
+                          {t('buttons.editDetails')}
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+                        <DialogHeader>
+                          <DialogTitle>{t('dialog.serverSettings')} - {serverName}</DialogTitle>
+                        </DialogHeader>
+                        <div className="grid gap-4 py-4">
+                          <div className="space-y-4">
+                            <h4 className="font-medium">{t('dialog.serverType')}</h4>
+                            <Select
+                              value={getServerType(serverConfig)}
+                              onValueChange={(newType: ServerType) => {
+                                let newConfig: ServerConfig
+                                if (newType === ServerType.SSE) {
+                                  newConfig = {
+                                    url: '',
+                                    autoApprove: serverConfig.autoApprove || []
+                                  }
+                                } else {
+                                  newConfig = {
+                                    command: newType as 'npx' | 'uvx' | 'node',
+                                    args: [],
+                                    env: {},
+                                    autoApprove: serverConfig.autoApprove || []
+                                  }
                                 }
-                              } else {
-                                newConfig = {
-                                  command: newType as 'npx' | 'uvx' | 'node',
-                                  args: [],
-                                  env: {},
-                                  autoApprove: serverConfig.autoApprove || []
-                                }
-                              }
-                              updateServerConfig(serverName, newConfig)
-                            }}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder={t('dialog.selectServerType')} />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {Object.values(ServerType).map((type) => (
-                                <SelectItem key={type} value={type}>
-                                  {serverTypeMap[type]}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                                updateServerConfig(serverName, newConfig)
+                              }}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder={t('dialog.selectServerType')} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {Object.values(ServerType).map((type) => (
+                                  <SelectItem key={type} value={type}>
+                                    {serverTypeMap[type]}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
 
-                          <div className="space-y-4 mt-6">
-                            <h4 className="font-medium">{t('dialog.serverConfig')}</h4>
-                            <div className="grid gap-4">
-                              {Object.entries(serverConfig).map(([key, value]) => {
-                                // const isArrayField = Array.isArray(value);
-                                // const isObjectField = !isArrayField && typeof value === 'object' && value !== null;
-                                const fieldClass = cn(
-                                  `space-y-2 p-3 border rounded-md`,
-                                  // `${isArrayField ? 'border-blue-200 bg-blue-50' : isObjectField ? 'border-green-200 bg-green-50' : 'border-gray-200'}`
-                                );
+                            <div className="space-y-4 mt-6">
+                              <h4 className="font-medium">{t('dialog.serverConfig')}</h4>
+                              <div className="grid gap-4">
+                                {Object.entries(serverConfig).map(([key, value]) => {
+                                  const fieldClass = cn(
+                                    `space-y-2 p-3 border rounded-md`,
+                                  );
 
-                                return (
-                                  <div key={key} className={fieldClass}>
-                                    <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                                      {fieldNameMap[key] || key}
-                                    </label>
-                                    {renderConfigField(serverName, serverConfig, key, value, true)}
-                                  </div>
-                                );
-                              })}
+                                  return (
+                                    <div key={key} className={fieldClass}>
+                                      <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                        {fieldNameMap[key] || key}
+                                      </label>
+                                      {renderConfigField(serverName, serverConfig, key, value, true)}
+                                    </div>
+                                  );
+                                })}
+                              </div>
                             </div>
                           </div>
+
                         </div>
 
-                      </div>
-
-                      <div className="flex justify-between gap-2 mt-6">
-                        <Button
-                          variant="destructive"
-                          onClick={() => deleteServer(serverName)}
-                        >
-                          <Trash className="h-4 w-4" />
-                          {t('buttons.delete')}
-                        </Button>
-                        <DialogTrigger asChild>
-
-                          <Button variant="outline">
-                            <Check className="h-4 w-4" />
-                            {t('buttons.ok')}
+                        <div className="flex justify-between gap-2 mt-6">
+                          <Button
+                            variant="destructive"
+                            onClick={() => deleteServer(serverName)}
+                          >
+                            <Trash className="h-4 w-4" />
+                            {t('buttons.delete')}
                           </Button>
-                        </DialogTrigger>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
+                          <DialogTrigger asChild>
+
+                            <Button variant="outline">
+                              <Check className="h-4 w-4" />
+                              {t('buttons.ok')}
+                            </Button>
+                          </DialogTrigger>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
                 </div>
-              </div>
-            </CardHeader>
-            <CardContent className=''>
-              <div className="flex flex-col gap-2">
-                {Object.entries(serverConfig).map(([key, value]) => {
-                  // 只显示最重要的几个字段，并根据类型进行不同的可视化处理
-                  // if (['command', 'args', 'url', 'autoApprove'].includes(key)) {
-                  return (
-                    <div key={key} className="space-y-1">
-                      <label className="text-xs font-medium text-muted-foreground">
-                        {fieldNameMap[key] || key}
-                      </label>
-                      {renderConfigField(serverName, serverConfig, key, value, false)}
-                    </div>
-                  );
-                }
-                  // return null; // 隐藏其他不那么重要的字段
-                  // }
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardHeader>
+              <CardContent className=''>
+                <div className="flex flex-col gap-2">
+                  {Object.entries(serverConfig).map(([key, value]) => {
+                    return (
+                      <div key={key} className="space-y-1">
+                        <label className="text-xs font-medium text-muted-foreground">
+                          {fieldNameMap[key] || key}
+                        </label>
+                        {renderConfigField(serverName, serverConfig, key, value, false)}
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
     </div>
   )

@@ -12,6 +12,19 @@ function createWindow() {
   const win = new BrowserWindow({
     width: 1200,
     height: 800,
+    // 根据平台设置不同的窗口样式
+    ...(process.platform === 'darwin' 
+      ? {
+          titleBarStyle: 'hiddenInset', // Mac 使用原生按钮但隐藏标题栏
+          trafficLightPosition: { x: 10, y: 10 }, // 可以调整红绿灯位置
+          transparent: true, // 启用透明
+          backgroundColor: '#00ffffff', // 设置透明背景
+          vibrancy: 'under-window' // 添加毛玻璃效果
+        }
+      : {
+          frame: false // Windows 使用自定义框架
+        }
+    ),
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -57,6 +70,29 @@ if (!gotTheLock) {
       if (BrowserWindow.getAllWindows().length === 0) {
         createWindow()
       }
+    })
+
+    // 添加窗口控制处理
+    ipcMain.on('window-control', (_, command) => {
+      switch (command) {
+        case 'minimize':
+          win.minimize()
+          break
+        case 'maximize':
+          if (win.isMaximized()) {
+            win.unmaximize()
+          } else {
+            win.maximize()
+          }
+          break
+        case 'close':
+          win.close()
+          break
+      }
+    })
+
+    ipcMain.handle('window-is-maximized', () => {
+      return win.isMaximized()
     })
 
     // 处理打开文件
