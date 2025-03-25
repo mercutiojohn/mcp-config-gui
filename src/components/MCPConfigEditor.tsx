@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Textarea } from "@/components/ui/textarea"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Loader2, Plus, X, ArrowUp, ArrowDown, Settings } from "lucide-react"
+import { Loader2, Plus, X, ArrowUp, ArrowDown, Settings, FileUp, Check, Pencil } from "lucide-react"
 import { MCPConfig, ServerConfig, getServerType, ServerType, serverTypeMap } from '@/types/mcp-config'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
@@ -29,6 +29,8 @@ export const MCPConfigEditor: React.FC = () => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [newServerName, setNewServerName] = useState('')
+  const [importConfig, setImportConfig] = useState('')
+  const [editingServers, setEditingServers] = useState<Record<string, boolean>>({})
 
   const handleOpenFile = async () => {
     try {
@@ -206,6 +208,46 @@ export const MCPConfigEditor: React.FC = () => {
     } as ServerConfig)
   }
 
+  const handleImportConfig = () => {
+    try {
+      let parsedConfig = JSON.parse(importConfig)
+      
+      // 如果是完整的 MCP 配置格式
+      if ('mcpServers' in parsedConfig) {
+        setConfig(prev => ({
+          ...prev,
+          mcpServers: {
+            ...prev?.mcpServers,
+            ...parsedConfig.mcpServers
+          }
+        }))
+      } 
+      // 如果是单个服务器配置
+      else {
+        const serverName = Object.keys(parsedConfig)[0]
+        const serverConfig = parsedConfig[serverName]
+        setConfig(prev => ({
+          ...prev,
+          mcpServers: {
+            ...prev?.mcpServers,
+            [serverName]: serverConfig
+          }
+        }))
+      }
+      setImportConfig('')
+      setError(null)
+    } catch (err) {
+      setError('导入配置失败：' + (err as Error).message)
+    }
+  }
+
+  const toggleEditing = (serverName: string) => {
+    setEditingServers(prev => ({
+      ...prev,
+      [serverName]: !prev[serverName]
+    }))
+  }
+
   const renderArrayField = (
     serverName: string,
     serverConfig: ServerConfig,
@@ -305,9 +347,46 @@ export const MCPConfigEditor: React.FC = () => {
     serverName: string, 
     serverConfig: ServerConfig,
     fieldKey: keyof ServerConfig, 
-    value: any
+    value: unknown,
+    isEditing: boolean
   ) => {
-    if (fieldKey === 'command') {
+    if (!isEditing) {
+      // 只读模式的渲染
+      if (Array.isArray(value)) {
+        return (
+          <div className="space-y-1">
+            {value.map((item, index) => (
+              <div key={index} className="text-sm text-gray-600">{String(item)}</div>
+            ))}
+          </div>
+        )
+      }
+
+      if (typeof value === 'boolean') {
+        return <div className="text-sm text-gray-600">{value ? '是' : '否'}</div>
+      }
+
+      if (typeof value === 'object' && value !== null) {
+        if (fieldKey === 'env' && typeof value === 'object') {
+          const envVars = value as Record<string, string>
+          return (
+            <div className="space-y-1">
+              {Object.entries(envVars).map(([key, val]) => (
+                <div key={key} className="text-sm text-gray-600">
+                  {key}: {val}
+                </div>
+              ))}
+            </div>
+          )
+        }
+        return <div className="text-sm text-gray-600">{JSON.stringify(value, null, 2)}</div>
+      }
+
+      return <div className="text-sm text-gray-600">{String(value)}</div>
+    }
+
+    // 编辑模式的原有逻辑
+    if (fieldKey === 'command' && typeof value === 'string') {
       return (
         <Select
           value={value}
@@ -389,12 +468,40 @@ export const MCPConfigEditor: React.FC = () => {
   if (!config) {
     return (
       <div className="flex flex-col items-center justify-center h-screen">
-        <Button 
-          variant="default"
-          onClick={handleOpenFile}
-        >
-          打开配置文件
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="default"
+            onClick={handleOpenFile}
+          >
+            打开配置文件
+          </Button>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline">
+                <FileUp className="h-4 w-4 mr-2" />
+                粘贴导入
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>导入配置</DialogTitle>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="space-y-2">
+                  <Textarea
+                    placeholder="请粘贴 MCP 配置 JSON，支持完整配置或单个服务器配置"
+                    value={importConfig}
+                    onChange={(e) => setImportConfig(e.target.value)}
+                    className="min-h-[200px]"
+                  />
+                </div>
+                <Button onClick={handleImportConfig}>
+                  导入
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
     )
   }
@@ -433,6 +540,32 @@ export const MCPConfigEditor: React.FC = () => {
               </>
             ) : '保存'}
           </Button>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline">
+                <FileUp className="h-4 w-4 mr-2" />
+                导入
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>导入配置</DialogTitle>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="space-y-2">
+                  <Textarea
+                    placeholder="请粘贴 MCP 配置 JSON，支持完整配置或单个服务器配置"
+                    value={importConfig}
+                    onChange={(e) => setImportConfig(e.target.value)}
+                    className="min-h-[200px]"
+                  />
+                </div>
+                <Button onClick={handleImportConfig}>
+                  导入
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
         <div className="flex items-center gap-2">
           <Input
@@ -513,6 +646,17 @@ export const MCPConfigEditor: React.FC = () => {
                 <Button
                   variant="ghost"
                   size="icon"
+                  onClick={() => toggleEditing(serverName)}
+                >
+                  {editingServers[serverName] ? (
+                    <Check className="h-4 w-4" />
+                  ) : (
+                    <Pencil className="h-4 w-4" />
+                  )}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
                   onClick={() => deleteServer(serverName)}
                 >
                   <X className="h-4 w-4" />
@@ -526,7 +670,7 @@ export const MCPConfigEditor: React.FC = () => {
                     <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                       {key}
                     </label>
-                    {renderConfigField(serverName, serverConfig, key as keyof ServerConfig, value)}
+                    {renderConfigField(serverName, serverConfig, key as keyof ServerConfig, value, editingServers[serverName])}
                   </div>
                 ))}
               </div>
