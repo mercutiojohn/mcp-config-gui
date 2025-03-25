@@ -6,6 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Textarea } from "@/components/ui/textarea"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Loader2 } from "lucide-react"
+import { MCPConfig, ServerConfig, getServerType, ServerType } from '@/types/mcp-config'
 
 // 声明全局 electronAPI
 declare global {
@@ -19,19 +20,6 @@ declare global {
 
 // 使用 window.electron 代替直接导入
 const { ipcRenderer } = window.require ? window.require('electron') : { ipcRenderer: null }
-
-interface MCPConfig {
-  mcpServers: {
-    [key: string]: {
-      url?: string
-      command?: string
-      args?: string[]
-      env?: Record<string, string>
-      autoApprove?: string[]
-      disabled?: boolean
-    }
-  }
-}
 
 export const MCPConfigEditor: React.FC = () => {
   const [config, setConfig] = useState<MCPConfig | null>(null)
@@ -71,7 +59,7 @@ export const MCPConfigEditor: React.FC = () => {
     }
   }
 
-  const updateServerConfig = (serverName: string, newConfig: any) => {
+  const updateServerConfig = (serverName: string, newConfig: ServerConfig) => {
     setConfig(prev => {
       if (!prev) return prev
       return {
@@ -82,6 +70,74 @@ export const MCPConfigEditor: React.FC = () => {
         }
       }
     })
+  }
+
+  const renderConfigField = (
+    serverName: string, 
+    serverConfig: ServerConfig,
+    fieldKey: string, 
+    value: any
+  ) => {
+    if (Array.isArray(value)) {
+      return (
+        <Textarea
+          value={value.join('\n')}
+          onChange={e => {
+            const newValue = e.target.value.split('\n')
+            updateServerConfig(serverName, {
+              ...serverConfig,
+              [fieldKey]: newValue
+            } as ServerConfig)
+          }}
+        />
+      )
+    }
+    
+    if (typeof value === 'boolean') {
+      return (
+        <Checkbox
+          checked={value}
+          onCheckedChange={(checked) => {
+            updateServerConfig(serverName, {
+              ...serverConfig,
+              [fieldKey]: checked
+            } as ServerConfig)
+          }}
+        />
+      )
+    }
+
+    if (typeof value === 'object' && value !== null) {
+      return (
+        <Textarea
+          value={JSON.stringify(value, null, 2)}
+          onChange={e => {
+            try {
+              const newValue = JSON.parse(e.target.value)
+              updateServerConfig(serverName, {
+                ...serverConfig,
+                [fieldKey]: newValue
+              } as ServerConfig)
+            } catch (err) {
+              // Handle JSON parse error if needed
+            }
+          }}
+        />
+      )
+    }
+
+    return (
+      <Input
+        type="text"
+        value={value as string}
+        onChange={e => {
+          updateServerConfig(serverName, {
+            ...serverConfig,
+            [fieldKey]: e.target.value
+          } as ServerConfig)
+        }}
+      />
+    )
   }
 
   if (!config) {
@@ -136,7 +192,12 @@ export const MCPConfigEditor: React.FC = () => {
         {Object.entries(config.mcpServers).map(([serverName, serverConfig]) => (
           <Card key={serverName}>
             <CardHeader>
-              <CardTitle>{serverName}</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                {serverName}
+                <span className="text-sm text-muted-foreground">
+                  {getServerType(serverConfig)}
+                </span>
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 gap-4">
@@ -145,39 +206,7 @@ export const MCPConfigEditor: React.FC = () => {
                     <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                       {key}
                     </label>
-                    {Array.isArray(value) ? (
-                      <Textarea
-                        value={value.join('\n')}
-                        onChange={e => {
-                          const newValue = e.target.value.split('\n')
-                          updateServerConfig(serverName, {
-                            ...serverConfig,
-                            [key]: newValue
-                          })
-                        }}
-                      />
-                    ) : typeof value === 'boolean' ? (
-                      <Checkbox
-                        checked={value}
-                        onCheckedChange={(checked) => {
-                          updateServerConfig(serverName, {
-                            ...serverConfig,
-                            [key]: checked
-                          })
-                        }}
-                      />
-                    ) : (
-                      <Input
-                        type="text"
-                        value={value as string}
-                        onChange={e => {
-                          updateServerConfig(serverName, {
-                            ...serverConfig,
-                            [key]: e.target.value
-                          })
-                        }}
-                      />
-                    )}
+                    {renderConfigField(serverName, serverConfig, key, value)}
                   </div>
                 ))}
               </div>
@@ -187,4 +216,4 @@ export const MCPConfigEditor: React.FC = () => {
       </div>
     </div>
   )
-} 
+}
