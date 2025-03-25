@@ -1,5 +1,14 @@
 import React, { useState } from 'react'
-import { ipcRenderer } from 'electron'
+
+// 声明全局 electronAPI
+declare global {
+  interface Window {
+    electronAPI: {
+      openFile: () => Promise<any>
+      saveFile: (data: any) => Promise<boolean>
+    }
+  }
+}
 
 interface MCPConfig {
   mcpServers: {
@@ -24,7 +33,7 @@ export const MCPConfigEditor: React.FC = () => {
     try {
       setLoading(true)
       setError(null)
-      const result = await ipcRenderer.invoke('open-file')
+      const result = await window.electronAPI.openFile()
       if (result) {
         setConfig(JSON.parse(result.content))
         setCurrentPath(result.path)
@@ -41,7 +50,7 @@ export const MCPConfigEditor: React.FC = () => {
     try {
       setLoading(true)
       setError(null)
-      await ipcRenderer.invoke('save-file', {
+      await window.electronAPI.saveFile({
         content: config,
         path: currentPath
       })

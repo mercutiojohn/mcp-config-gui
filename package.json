@@ -2,14 +2,13 @@
   "name": "mcp-config-gui_1",
   "private": true,
   "version": "0.0.0",
-  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "electron:dev": "tsc -p tsconfig.electron.json && concurrently \"vite dev\" \"electron .\"",
-    "electron:build": "tsc -p tsconfig.electron.json && vite build && electron-builder",
+    "electron:dev": "cross-env NODE_ENV=development tsc -p tsconfig.electron.json && concurrently \"vite dev\" \"cross-env NODE_ENV=development electron .\"",
+    "electron:build": "cross-env NODE_ENV=production tsc -p tsconfig.electron.json && vite build && electron-builder",
     "electron:preview": "vite preview & electron ."
   },
   "dependencies": {
@@ -25,6 +24,7 @@
     "@types/react-dom": "^19.0.4",
     "@vitejs/plugin-react": "^4.3.4",
     "concurrently": "^9.1.2",
+    "cross-env": "^7.0.3",
     "electron-builder": "^25.1.8",
     "eslint": "^9.21.0",
     "eslint-plugin-react-hooks": "^5.1.0",

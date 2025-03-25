@@ -6,23 +6,25 @@ import { enable } from '@electron/remote/main'
 // 开发环境判断
 const isDev = process.env.NODE_ENV === 'development' || process.env.DEBUG_PROD === 'true'
 
-enable()
-
 function createWindow() {
   const win = new BrowserWindow({
     width: 1200,
     height: 800,
     webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false,
-      webSecurity: !isDev  // 开发环境下关闭 web 安全限制
+      nodeIntegration: false,
+      contextIsolation: true,
+      preload: path.join(__dirname, 'preload.js')
     }
   })
+
+  // 在这里启用 remote
+  enable(win.webContents)
 
   // 开发环境下打开开发者工具
   if (isDev) {
     win.webContents.openDevTools()
-    win.loadURL('http://localhost:5173')
+    // 使用 Vite 开发服务器的 URL
+    win.loadURL('http://localhost:5175')
   } else {
     // 修改生产环境加载路径
     win.loadFile(path.join(__dirname, '../dist/index.html'))
