@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Textarea } from "@/components/ui/textarea"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Loader2, Plus, X, ArrowUp, ArrowDown, Settings, FileUp, Check, Trash, Minus, Square, X as Close, Maximize2 } from "lucide-react"
+import { Loader2, Plus, X, ArrowUp, ArrowDown, Settings, FileUp, Check, Trash } from "lucide-react"
 import { MCPConfig, ServerConfig, getServerType, ServerType, serverTypeMap, fieldNameMap } from '@/types/mcp-config'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
