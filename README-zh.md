@@ -2,7 +2,7 @@
 
 一个用于管理和编辑 MCP (Multi-Cloud Provider) 配置的图形用户界面工具。
 
-<!-- ![MCP Config GUI](./screenshots/app-screenshot.png) -->
+![MCP Config GUI](./screenshots/app-screenshot.png)
 
 ## 项目简介
 

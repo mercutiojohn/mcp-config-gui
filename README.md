@@ -2,7 +2,7 @@
 
 A graphical user interface tool for managing and editing MCP (Multi-Cloud Provider) configurations.
 
-<!-- ![MCP Config GUI](./screenshots/app-screenshot.png) -->
+![MCP Config GUI](./screenshots/app-screenshot.png)
 
 ## Project Overview
 
