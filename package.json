@@ -11,7 +11,11 @@
     "preview": "vite preview",
     "electron:dev": "cross-env NODE_ENV=development tsc -p tsconfig.electron.json && concurrently \"vite dev\" \"cross-env NODE_ENV=development electron .\"",
     "electron:build": "cross-env NODE_ENV=production tsc -p tsconfig.electron.json && tsc -b && vite build && electron-builder",
-    "electron:preview": "vite preview & electron ."
+    "electron:preview": "vite preview & electron .",
+    "build:win": "cross-env NODE_ENV=production tsc -p tsconfig.electron.json && tsc -b && vite build && electron-builder --win",
+    "build:mac": "cross-env NODE_ENV=production tsc -p tsconfig.electron.json && tsc -b && vite build && electron-builder --mac",
+    "build:linux": "cross-env NODE_ENV=production tsc -p tsconfig.electron.json && tsc -b && vite build && electron-builder --linux",
+    "build:all": "cross-env NODE_ENV=production tsc -p tsconfig.electron.json && tsc -b && vite build && electron-builder -mwl"
   },
   "dependencies": {
     "@electron/remote": "^2.1.2",
@@ -59,14 +63,40 @@
   },
   "main": "dist-electron/main.js",
   "build": {
-    "appId": "com.mcp.config.gui",
-    "productName": "MCP Config GUI",
+    "appId": "club.mercutio.mcp.config",
+    "productName": "MCP Config",
     "directories": {
       "output": "release"
     },
     "files": [
       "dist/**/*",
       "dist-electron/**/*"
-    ]
+    ],
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "target": [
+        "dmg",
+        "zip"
+      ]
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64", "ia32"]
+        },
+        {
+          "target": "portable"
+        }
+      ]
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb",
+        "rpm"
+      ],
+      "category": "Development"
+    }
   }
 }
