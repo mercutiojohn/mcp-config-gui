@@ -72,6 +72,9 @@ if (!gotTheLock) {
 else {
     electron_1.app.whenReady().then(() => {
         const win = createWindow();
+        win.webContents.on('did-finish-load', () => {
+            win.webContents.send('ready');
+        });
         electron_1.app.on('window-all-closed', () => {
             if (process.platform !== 'darwin') {
                 electron_1.app.quit();

@@ -6,19 +6,12 @@ import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Textarea } from "@/components/ui/textarea"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Loader2, Plus, X, ArrowUp, ArrowDown, Settings, FileUp, Check, Pencil, Trash } from "lucide-react"
+import { Loader2, Plus, X, ArrowUp, ArrowDown, Settings, FileUp, Check, Trash } from "lucide-react"
 import { MCPConfig, ServerConfig, getServerType, ServerType, serverTypeMap, fieldNameMap } from '@/types/mcp-config'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { cn } from '@/lib/utils'
 
-// 添加文本截断工具函数
-const truncateText = (text: string, maxLength: number = 50) => {
-  if (typeof text !== 'string') {
-    text = String(text);
-  }
-  return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
-}
 
 // 声明全局 electronAPI
 declare global {
@@ -27,11 +20,12 @@ declare global {
       openFile: () => Promise<any>
       saveFile: (data: any) => Promise<boolean>
     }
+    require?: any
   }
 }
 
 // 使用 window.electron 代替直接导入
-const { ipcRenderer } = window.require ? window.require('electron') : { ipcRenderer: null }
+const { } = window.require ? window.require('electron') : { }
 
 export const MCPConfigEditor: React.FC = () => {
   const { t } = useTranslation()
@@ -591,10 +585,10 @@ export const MCPConfigEditor: React.FC = () => {
         </div>
       </div>
 
-      <div className="space-y-6 grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-4">
         {Object.entries(config.mcpServers).map(([serverName, serverConfig]) => (
           <Card key={serverName}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 !pt-1">
+            <CardHeader className="flex flex-row items-center justify-between pb-2 !pt-1">
               <CardTitle className="text-lg font-bold truncate">
                 {serverName}
                 <span className="ml-2 text-sm text-muted-foreground">

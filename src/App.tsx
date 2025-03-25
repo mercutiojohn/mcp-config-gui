@@ -1,4 +1,4 @@
-import { MCPConfigEditor } from './components/MCPConfigEditor'
+import { MCPConfigEditor } from './components/editor'
 
 function App() {
   return (

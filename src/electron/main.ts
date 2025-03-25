@@ -43,6 +43,10 @@ if (!gotTheLock) {
   app.whenReady().then(() => {
     const win = createWindow()
 
+    win.webContents.on('did-finish-load', () => {
+      win.webContents.send('ready')
+    })
+
     app.on('window-all-closed', () => {
       if (process.platform !== 'darwin') {
         app.quit()

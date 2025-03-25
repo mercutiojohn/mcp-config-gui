@@ -1,5 +1,7 @@
 {
-  "name": "mcp-config-gui_1",
+  "name": "mcp-config-gui",
+  "description": "GUI for MCP configuration",
+  "author": "Ryan G.",
   "private": true,
   "version": "0.0.0",
   "scripts": {
@@ -8,7 +10,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "electron:dev": "cross-env NODE_ENV=development tsc -p tsconfig.electron.json && concurrently \"vite dev\" \"cross-env NODE_ENV=development electron .\"",
-    "electron:build": "cross-env NODE_ENV=production tsc -p tsconfig.electron.json && vite build && electron-builder",
+    "electron:build": "cross-env NODE_ENV=production tsc -p tsconfig.electron.json && tsc -b && vite build && electron-builder",
     "electron:preview": "vite preview & electron ."
   },
   "dependencies": {
@@ -23,7 +25,6 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
-    "electron": "^35.0.3",
     "i18next": "^24.2.3",
     "i18next-browser-languagedetector": "^8.0.4",
     "lucide-react": "^0.483.0",
@@ -31,7 +32,7 @@
     "react-dom": "^19.0.0",
     "react-i18next": "^15.4.1",
     "tailwind-merge": "^3.0.2",
-    "tailwindcss": "^3.3.0",
+    "tailwindcss": "^4.0.16",
     "tw-animate-css": "^1.2.4",
     "vaul": "^1.1.2"
   },
@@ -45,6 +46,7 @@
     "autoprefixer": "^10.4.16",
     "concurrently": "^9.1.2",
     "cross-env": "^7.0.3",
+    "electron": "^35.0.3",
     "electron-builder": "^25.1.8",
     "eslint": "^9.21.0",
     "eslint-plugin-react-hooks": "^5.1.0",
