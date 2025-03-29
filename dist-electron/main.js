@@ -73,6 +73,78 @@ const getPlatformWindowConfig = () => {
     };
 };
 function createWindow() {
+    let win;
+    // 使用 mica-electron 创建 Windows 11 窗口
+    if (process.platform === 'win32') {
+        try {
+            const { MicaBrowserWindow, IS_WINDOWS_11 } = require('mica-electron');
+            if (IS_WINDOWS_11) {
+                const micaWin = new MicaBrowserWindow({
+                    width: 1200,
+                    height: 800,
+                    ...getPlatformWindowConfig(),
+                    autoHideMenuBar: true,
+                    // show: false, // 保持为 false，我们将在 dom-ready 或 ready-to-show 后显示
+                    webPreferences: {
+                        nodeIntegration: false,
+                        contextIsolation: true,
+                        preload: path.join(__dirname, 'preload.js')
+                    }
+                });
+                // 设置 Mica 效果
+                micaWin.setAutoTheme();
+                micaWin.setMicaEffect();
+                // 在这里启用 remote
+                (0, main_1.enable)(micaWin.webContents);
+                // 确保窗口能够正确显示
+                micaWin.once('ready-to-show', () => {
+                    micaWin.show();
+                    setTimeout(() => {
+                        micaWin.setAutoTheme(); // 设置自动主题
+                    }, 500); // 延迟显示以确保 Mica 效果生效
+                });
+                win = micaWin;
+            }
+            else {
+                // 非 Windows 11 系统创建普通窗口
+                win = createRegularWindow();
+            }
+        }
+        catch (error) {
+            console.error('无法创建 Mica 窗口:', error);
+            win = createRegularWindow();
+        }
+    }
+    else {
+        // 非 Windows 系统创建普通窗口
+        win = createRegularWindow();
+    }
+    // 开发环境下打开开发者工具
+    if (isDev) {
+        win.webContents.openDevTools();
+        // 使用 Vite 开发服务器的 URL
+        win.loadURL(`http://localhost:${PORT}`);
+    }
+    else {
+        // 修改生产环境加载路径
+        win.loadFile(path.join(__dirname, '../dist/index.html'));
+    }
+    // 如果使用 mica-electron，确保窗口在 DOM 准备好后显示
+    if (process.platform === 'win32' && win.isVisible() === false) {
+        win.webContents.once('dom-ready', () => {
+            win.show();
+        });
+    }
+    else {
+        // 确保非 mica-electron 窗口也能显示
+        if (!win.isVisible()) {
+            win.show();
+        }
+    }
+    return win;
+}
+// 创建普通窗口的函数，确保函数有返回类型
+function createRegularWindow() {
     const win = new electron_1.BrowserWindow({
         width: 1200,
         height: 800,
@@ -85,47 +157,6 @@ function createWindow() {
     });
     // 在这里启用 remote
     (0, main_1.enable)(win.webContents);
-    // 为 Windows 11 添加 Mica 效果
-    if (process.platform === 'win32') {
-        try {
-            // const { systemPreferences } = require('electron')
-            const { windowsStore } = require('electron-util');
-            // 检查是否为 Windows 11
-            const isWin11 = windowsStore || parseInt(os.release().split('.')[0]) >= 10 &&
-                parseInt(os.release().split('.')[2]) >= 22000;
-            if (isWin11) {
-                // 设置窗口背景材质为 Mica
-                win.once('ready-to-show', () => {
-                    try {
-                        const { WindowsControl } = require('windows-control');
-                        const hwnd = win.getNativeWindowHandle();
-                        // 启用 Mica 效果
-                        WindowsControl.setWindowAttribute(hwnd, 'DWMWA_SYSTEMBACKDROP_TYPE', 2);
-                        // 如果要使用 Acrylic 效果，可以设置为 3
-                        // WindowsControl.setWindowAttribute(hwnd, 'DWMWA_SYSTEMBACKDROP_TYPE', 3)
-                        // 如果要使用 Tabbed 效果，可以设置为 4
-                        // WindowsControl.setWindowAttribute(hwnd, 'DWMWA_SYSTEMBACKDROP_TYPE', 4)
-                    }
-                    catch (e) {
-                        console.error('应用 Mica 效果失败:', e);
-                    }
-                });
-            }
-        }
-        catch (error) {
-            console.error('无法应用 Mica 效果:', error);
-        }
-    }
-    // 开发环境下打开开发者工具
-    if (isDev) {
-        win.webContents.openDevTools();
-        // 使用 Vite 开发服务器的 URL
-        win.loadURL(`http://localhost:${PORT}`);
-    }
-    else {
-        // 修改生产环境加载路径
-        win.loadFile(path.join(__dirname, '../dist/index.html'));
-    }
     return win;
 }
 // 防止程序多开
@@ -136,6 +167,10 @@ if (!gotTheLock) {
 else {
     electron_1.app.whenReady().then(() => {
         const win = createWindow();
+        // 确保窗口显示
+        if (!win.isVisible()) {
+            win.show();
+        }
         win.webContents.on('did-finish-load', () => {
             win.webContents.send('ready');
         });
