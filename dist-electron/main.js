@@ -138,6 +138,18 @@ else {
         const win = createWindow();
         win.webContents.on('did-finish-load', () => {
             win.webContents.send('ready');
+            // 初始化时发送当前系统主题
+            console.log('原生主题变化', electron_1.nativeTheme.shouldUseDarkColors ? 'dark' : 'light');
+            win.webContents.send('native-theme-updated', electron_1.nativeTheme.shouldUseDarkColors ? 'dark' : 'light');
+        });
+        // 监听原生主题变化
+        electron_1.nativeTheme.on('updated', () => {
+            console.log('原生主题变化', electron_1.nativeTheme.shouldUseDarkColors ? 'dark' : 'light');
+            win.webContents.send('native-theme-updated', electron_1.nativeTheme.shouldUseDarkColors ? 'dark' : 'light');
+        });
+        // 添加主题相关的 IPC 处理器
+        electron_1.ipcMain.handle('get-native-theme', () => {
+            return electron_1.nativeTheme.shouldUseDarkColors ? 'dark' : 'light';
         });
         electron_1.app.on('window-all-closed', () => {
             if (process.platform !== 'darwin') {

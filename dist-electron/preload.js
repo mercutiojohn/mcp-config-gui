@@ -11,5 +11,19 @@ electron_1.contextBridge.exposeInMainWorld('electronAPI', {
         close: () => electron_1.ipcRenderer.send('window-control', 'close'),
         isMaximized: () => electron_1.ipcRenderer.invoke('window-is-maximized')
     },
-    platform: process.platform
+    platform: process.platform,
+    // 添加主题相关 API
+    theme: {
+        // 获取当前系统主题
+        getNativeTheme: () => electron_1.ipcRenderer.invoke('get-native-theme'),
+        // 监听系统主题变化
+        onThemeUpdated: (callback) => {
+            const subscription = (_event, theme) => callback(theme);
+            electron_1.ipcRenderer.on('native-theme-updated', subscription);
+            // 返回清理函数
+            return () => {
+                electron_1.ipcRenderer.removeListener('native-theme-updated', subscription);
+            };
+        }
+    }
 });

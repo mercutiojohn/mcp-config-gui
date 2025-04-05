@@ -8,7 +8,11 @@ declare global {
         maximize: () => Promise<void>
         close: () => Promise<void>
         isMaximized: () => Promise<boolean>
-      }
+      };
+      theme: {
+        getNativeTheme: () => Promise<'dark' | 'light'>;
+        onThemeUpdated: (callback: (theme: 'dark' | 'light') => void) => () => void;
+      };
       platform: string
     }
     require?: any

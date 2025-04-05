@@ -1,22 +1,14 @@
-import { useState } from 'react'
 import { MCPConfigEditor } from './components/main-editor'
 import { Minus, Square, Maximize2, X as Close } from 'lucide-react'
 import { ThemeProvider } from "@/components/theme-provider"
 import { cn } from './lib/utils'
+import { useWindowControls } from './hooks/use-window-controls'
 
 function App() {
-  const [isMaximized, setIsMaximized] = useState(false)
-  const isMac = window.electronAPI.platform === 'darwin'
-
-  const handleWindowControl = async (action: 'minimize' | 'maximize' | 'close') => {
-    await window.electronAPI.windowControl[action]()
-    if (action === 'maximize') {
-      setIsMaximized(await window.electronAPI.windowControl.isMaximized())
-    }
-  }
+  const { isMac, isMaximized, handleWindowControl } = useWindowControls();
 
   return (
-    <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+    <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
       <div className={`w-full h-screen flex flex-col ${isMac ? 'bg-transparent' : 'bg-background'}`}>
         {!isMac ? (
           <div className="h-8 flex items-center justify-between bg-background border-b select-none app-region-drag">
@@ -51,7 +43,8 @@ function App() {
         )}
         <div className={`flex-1 overflow-auto ${isMac ? cn(
           // 'vibrancy-content-custom',
-          'bg-background'
+          'bg-transparent',
+          // 'bg-background'
         ) : 'bg-background'}`}>
           <MCPConfigEditor />
         </div>

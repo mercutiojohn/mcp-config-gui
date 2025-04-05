@@ -15,6 +15,8 @@ import { useArrayOperations } from '@/hooks/use-array-operations';
 import { useEnvOperations } from '@/hooks/use-env-operations';
 import { useFileOperations } from '@/hooks/use-file-operations';
 import { electronAPI } from '@/utils/electron-api';
+import { useWindowControls } from '@/hooks/use-window-controls'
+import { ModeToggle } from './mode-toggle'
 
 export const MCPConfigEditor: React.FC = () => {
   const { t } = useTranslation()
@@ -31,6 +33,8 @@ export const MCPConfigEditor: React.FC = () => {
     handleSaveFile,
     handleImportConfig
   } = useFileOperations();
+
+  const { isMac } = useWindowControls();
 
   const addNewServer = () => {
     if (!config || !newServerName.trim()) return
@@ -133,16 +137,12 @@ export const MCPConfigEditor: React.FC = () => {
   return (
     <div className="flex-1 overflow-y-auto">
       <div className={cn(
-        "mx-auto relative flex flex-col h-[calc(100vh-theme(height.header))]"
+        "mx-auto relative flex flex-col h-[calc(100vh-theme(height.header))]",
       )}>
-        {error && (
-          <Alert variant="destructive" className="mb-4">
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
 
         <div className={cn(
           "border-b py-4 w-full",
+          isMac ? "vibrancy-header-custom" : "bg-background",
           // "flex justify-center",
         )}>
           <div className={cn(
@@ -150,8 +150,7 @@ export const MCPConfigEditor: React.FC = () => {
             "px-4",
             "flex justify-between"
           )}>
-
-            <div className="flex gap-2">
+            <div className="flex gap-2 app-region-no-drag">
               <Button
                 variant="outline"
                 onClick={handleOpenFile}
@@ -203,7 +202,7 @@ export const MCPConfigEditor: React.FC = () => {
                 </DialogContent>
               </Dialog>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 app-region-no-drag">
               <Input
                 placeholder={t('placeholders.newServerName')}
                 value={newServerName}
@@ -217,160 +216,169 @@ export const MCPConfigEditor: React.FC = () => {
                 <Plus className="h-4 w-4 mr-2" />
                 {t('buttons.add')}
               </Button>
+              <ModeToggle />
             </div>
           </div>
-
         </div>
-
         <div className={cn(
-          "grid grid-cols-2 gap-4 py-6 flex-1 overflow-y-auto",
-          "px-4",
+          "py-6 px-4 flex-1 overflow-y-auto",
+          isMac ? "vibrancy-content-custom" : "bg-background",
         )}>
-          {Object.entries(config.mcpServers).map(([serverName, serverConfig]) => (
-            <Card key={serverName}>
-              <CardHeader className="flex flex-row items-center justify-between pb-2 !pt-1">
-                <CardTitle className="text-lg font-bold truncate">
-                  {serverName}
-                  <span className="ml-2 text-sm text-muted-foreground">
-                    {serverTypeMap[getServerType(serverConfig)]}
-                  </span>
-                </CardTitle>
-                <div className="flex items-center gap-2">
-                  <div className="">
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button variant="outline" size="sm" className="w-full">
-                          <Settings className="h-3 w-3 mr-1" />
-                          {t('buttons.editDetails')}
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-                        <DialogHeader>
-                          <DialogTitle>{t('dialog.serverSettings')} - {serverName}</DialogTitle>
-                        </DialogHeader>
-                        <div className="grid gap-4 py-4">
-                          <div className="space-y-4">
-                            <h4 className="font-medium">{t('dialog.serverType')}</h4>
-                            <Select
-                              value={getServerType(serverConfig)}
-                              onValueChange={(newType: ServerType) => {
-                                let newConfig: ServerConfig
-                                if (newType === ServerType.SSE) {
-                                  newConfig = {
-                                    url: '',
-                                    autoApprove: serverConfig.autoApprove || []
+          {error && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+          <div className={cn(
+            "grid grid-cols-2 gap-4",
+          )}>
+            {Object.entries(config.mcpServers).map(([serverName, serverConfig]) => (
+              <Card key={serverName}>
+                <CardHeader className="flex flex-row items-center justify-between pb-2 !pt-1">
+                  <CardTitle className="text-lg font-bold truncate">
+                    {serverName}
+                    <span className="ml-2 text-sm text-muted-foreground">
+                      {serverTypeMap[getServerType(serverConfig)]}
+                    </span>
+                  </CardTitle>
+                  <div className="flex items-center gap-2">
+                    <div className="">
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button variant="outline" size="sm" className="w-full">
+                            <Settings className="h-3 w-3 mr-1" />
+                            {t('buttons.editDetails')}
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+                          <DialogHeader>
+                            <DialogTitle>{t('dialog.serverSettings')} - {serverName}</DialogTitle>
+                          </DialogHeader>
+                          <div className="grid gap-4 py-4">
+                            <div className="space-y-4">
+                              <h4 className="font-medium">{t('dialog.serverType')}</h4>
+                              <Select
+                                value={getServerType(serverConfig)}
+                                onValueChange={(newType: ServerType) => {
+                                  let newConfig: ServerConfig
+                                  if (newType === ServerType.SSE) {
+                                    newConfig = {
+                                      url: '',
+                                      autoApprove: serverConfig.autoApprove || []
+                                    }
+                                  } else {
+                                    newConfig = {
+                                      command: newType as 'npx' | 'uvx' | 'node',
+                                      args: [],
+                                      env: {},
+                                      autoApprove: serverConfig.autoApprove || []
+                                    }
                                   }
-                                } else {
-                                  newConfig = {
-                                    command: newType as 'npx' | 'uvx' | 'node',
-                                    args: [],
-                                    env: {},
-                                    autoApprove: serverConfig.autoApprove || []
-                                  }
-                                }
-                                updateServerConfig(serverName, newConfig)
-                              }}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder={t('dialog.selectServerType')} />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {Object.values(ServerType).map((type) => (
-                                  <SelectItem key={type} value={type}>
-                                    {serverTypeMap[type]}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                                  updateServerConfig(serverName, newConfig)
+                                }}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder={t('dialog.selectServerType')} />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {Object.values(ServerType).map((type) => (
+                                    <SelectItem key={type} value={type}>
+                                      {serverTypeMap[type]}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
 
-                            <div className="space-y-4 mt-6">
-                              <h4 className="font-medium">{t('dialog.serverConfig')}</h4>
-                              <div className="grid gap-4">
-                                {Object.entries(serverConfig).map(([key, value]) => {
-                                  const fieldClass = cn(
-                                    `space-y-2 p-3 border rounded-md`,
-                                  );
+                              <div className="space-y-4 mt-6">
+                                <h4 className="font-medium">{t('dialog.serverConfig')}</h4>
+                                <div className="grid gap-4">
+                                  {Object.entries(serverConfig).map(([key, value]) => {
+                                    const fieldClass = cn(
+                                      `space-y-2 p-3 border rounded-md`,
+                                    );
 
-                                  return (
-                                    <div key={key} className={fieldClass}>
-                                      <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                                        {fieldNameMap[key] || key}
-                                      </label>
-                                      <ConfigFieldRenderer
-                                        serverName={serverName}
-                                        serverConfig={serverConfig}
-                                        fieldKey={key}
-                                        value={value}
-                                        isEditing={true}
-                                        onUpdateServerConfig={updateServerConfig}
-                                        onArrayItemChange={handleArrayItemChange}
-                                        onArrayItemMove={handleArrayItemMove}
-                                        onArrayItemDelete={handleArrayItemDelete}
-                                        onArrayItemAdd={handleArrayItemAdd}
-                                        onEnvChange={handleEnvChange}
-                                        onEnvDelete={handleEnvDelete}
-                                        onEnvAdd={handleEnvAdd}
-                                        onEnvKeyChange={handleEnvKeyChange}
-                                      />
-                                    </div>
-                                  );
-                                })}
+                                    return (
+                                      <div key={key} className={fieldClass}>
+                                        <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                          {fieldNameMap[key] || key}
+                                        </label>
+                                        <ConfigFieldRenderer
+                                          serverName={serverName}
+                                          serverConfig={serverConfig}
+                                          fieldKey={key}
+                                          value={value}
+                                          isEditing={true}
+                                          onUpdateServerConfig={updateServerConfig}
+                                          onArrayItemChange={handleArrayItemChange}
+                                          onArrayItemMove={handleArrayItemMove}
+                                          onArrayItemDelete={handleArrayItemDelete}
+                                          onArrayItemAdd={handleArrayItemAdd}
+                                          onEnvChange={handleEnvChange}
+                                          onEnvDelete={handleEnvDelete}
+                                          onEnvAdd={handleEnvAdd}
+                                          onEnvKeyChange={handleEnvKeyChange}
+                                        />
+                                      </div>
+                                    );
+                                  })}
+                                </div>
                               </div>
                             </div>
                           </div>
-                        </div>
 
-                        <div className="flex justify-between gap-2 mt-6">
-                          <Button
-                            variant="destructive"
-                            onClick={() => deleteServer(serverName)}
-                          >
-                            <Trash className="h-4 w-4" />
-                            {t('buttons.delete')}
-                          </Button>
-                          <DialogTrigger asChild>
-                            <Button variant="outline">
-                              <Check className="h-4 w-4" />
-                              {t('buttons.ok')}
+                          <div className="flex justify-between gap-2 mt-6">
+                            <Button
+                              variant="destructive"
+                              onClick={() => deleteServer(serverName)}
+                            >
+                              <Trash className="h-4 w-4" />
+                              {t('buttons.delete')}
                             </Button>
-                          </DialogTrigger>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
+                            <DialogTrigger asChild>
+                              <Button variant="outline">
+                                <Check className="h-4 w-4" />
+                                {t('buttons.ok')}
+                              </Button>
+                            </DialogTrigger>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
                   </div>
-                </div>
-              </CardHeader>
-              <CardContent className=''>
-                <div className="flex flex-col gap-2">
-                  {Object.entries(serverConfig).map(([key, value]) => {
-                    return (
-                      <div key={key} className="space-y-1">
-                        <label className="text-xs font-medium text-muted-foreground">
-                          {fieldNameMap[key] || key}
-                        </label>
-                        <ConfigFieldRenderer
-                          serverName={serverName}
-                          serverConfig={serverConfig}
-                          fieldKey={key}
-                          value={value}
-                          isEditing={false}
-                          onUpdateServerConfig={updateServerConfig}
-                          onArrayItemChange={handleArrayItemChange}
-                          onArrayItemMove={handleArrayItemMove}
-                          onArrayItemDelete={handleArrayItemDelete}
-                          onArrayItemAdd={handleArrayItemAdd}
-                          onEnvChange={handleEnvChange}
-                          onEnvDelete={handleEnvDelete}
-                          onEnvAdd={handleEnvAdd}
-                          onEnvKeyChange={handleEnvKeyChange}
-                        />
-                      </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardHeader>
+                <CardContent className=''>
+                  <div className="flex flex-col gap-2">
+                    {Object.entries(serverConfig).map(([key, value]) => {
+                      return (
+                        <div key={key} className="space-y-1">
+                          <label className="text-xs font-medium text-muted-foreground">
+                            {fieldNameMap[key] || key}
+                          </label>
+                          <ConfigFieldRenderer
+                            serverName={serverName}
+                            serverConfig={serverConfig}
+                            fieldKey={key}
+                            value={value}
+                            isEditing={false}
+                            onUpdateServerConfig={updateServerConfig}
+                            onArrayItemChange={handleArrayItemChange}
+                            onArrayItemMove={handleArrayItemMove}
+                            onArrayItemDelete={handleArrayItemDelete}
+                            onArrayItemAdd={handleArrayItemAdd}
+                            onEnvChange={handleEnvChange}
+                            onEnvDelete={handleEnvDelete}
+                            onEnvAdd={handleEnvAdd}
+                            onEnvKeyChange={handleEnvKeyChange}
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
         </div>
       </div>
     </div>

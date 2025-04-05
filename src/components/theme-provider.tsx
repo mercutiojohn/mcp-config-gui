@@ -29,45 +29,81 @@ export function ThemeProvider({
   const [theme, setTheme] = useState<Theme>(
     () => (localStorage.getItem(storageKey) as Theme) || defaultTheme
   )
+  const [systemThemeValue, setSystemThemeValue] = useState<'dark' | 'light'>('light');
 
+  // 初始化并监听主题变化
   useEffect(() => {
-    const root = window.document.documentElement
+    console.log("是否在 Electron 环境:", !!window.electronAPI?.theme);
+    // 检测是否在 Electron 环境中
+    if (window.electronAPI?.theme) {
+      // 获取初始主题
+      window.electronAPI.theme.getNativeTheme().then(nativeTheme => {
+        console.log("初始系统主题:", nativeTheme);
+        setSystemThemeValue(nativeTheme);
+      });
 
-    root.classList.remove("light", "dark")
+      // 监听主题变化
+      const removeListener = window.electronAPI.theme.onThemeUpdated((nativeTheme) => {
+        console.log("系统主题变化:", nativeTheme);
+        setSystemThemeValue(nativeTheme);
+      });
+
+      return () => {
+        // 清理监听器
+        removeListener();
+      };
+    } else {
+      // 在非 Electron 环境中回退到 matchMedia API
+      const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+      const handleChange = (e: MediaQueryListEvent) => {
+        setSystemThemeValue(e.matches ? 'dark' : 'light');
+      };
+
+      setSystemThemeValue(mediaQuery.matches ? 'dark' : 'light');
+
+      if (mediaQuery.addEventListener) {
+        mediaQuery.addEventListener("change", handleChange);
+        return () => mediaQuery.removeEventListener("change", handleChange);
+      } else {
+        // 兼容性处理
+        mediaQuery.addListener(handleChange);
+        return () => mediaQuery.removeListener(handleChange);
+      }
+    }
+  }, []);
+
+  // 应用主题到 DOM
+  useEffect(() => {
+    const root = window.document.documentElement;
+    root.classList.remove("light", "dark");
 
     if (theme === "system") {
-      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
-        .matches
-        ? "dark"
-        : "light"
-
-      root.classList.add(systemTheme)
-      return
+      root.classList.add(systemThemeValue);
+    } else {
+      root.classList.add(theme);
     }
-
-    root.classList.add(theme)
-  }, [theme])
+  }, [theme, systemThemeValue]);
 
   const value = {
     theme,
     setTheme: (theme: Theme) => {
-      localStorage.setItem(storageKey, theme)
-      setTheme(theme)
+      localStorage.setItem(storageKey, theme);
+      setTheme(theme);
     },
-  }
+  };
 
   return (
     <ThemeProviderContext.Provider {...props} value={value}>
       {children}
     </ThemeProviderContext.Provider>
-  )
+  );
 }
 
 export const useTheme = () => {
-  const context = useContext(ThemeProviderContext)
+  const context = useContext(ThemeProviderContext);
 
   if (context === undefined)
-    throw new Error("useTheme must be used within a ThemeProvider")
+    throw new Error("useTheme must be used within a ThemeProvider");
 
-  return context
-}
+  return context;
+};

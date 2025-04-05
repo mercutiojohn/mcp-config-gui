@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog } from 'electron'
+import { app, BrowserWindow, ipcMain, dialog, nativeTheme } from 'electron'
 import * as path from 'path'
 import * as fs from 'fs'
 import * as os from 'os'
@@ -21,11 +21,11 @@ const getPlatformWindowConfig = () => {
       vibrancy: 'under-window' as const  // 添加 as const 类型断言
     }
   }
-  
+
   // Windows 配置
   if (process.platform === 'win32') {
-    const isWin11 = parseInt(os.release().split('.')[0]) >= 10 && 
-                    parseInt(os.release().split('.')[2]) >= 22000;
+    const isWin11 = parseInt(os.release().split('.')[0]) >= 10 &&
+      parseInt(os.release().split('.')[2]) >= 22000;
     return {
       frame: false, // Windows 使用自定义框架
       ...(isWin11 ? {
@@ -36,7 +36,7 @@ const getPlatformWindowConfig = () => {
       })
     }
   }
-  
+
   // Linux 或其他平台配置
   return {
     frame: false
@@ -63,24 +63,24 @@ function createWindow() {
     try {
       // const { systemPreferences } = require('electron')
       const { windowsStore } = require('electron-util')
-      
+
       // 检查是否为 Windows 11
-      const isWin11 = windowsStore || parseInt(os.release().split('.')[0]) >= 10 && 
-                      parseInt(os.release().split('.')[2]) >= 22000
-      
+      const isWin11 = windowsStore || parseInt(os.release().split('.')[0]) >= 10 &&
+        parseInt(os.release().split('.')[2]) >= 22000
+
       if (isWin11) {
         // 设置窗口背景材质为 Mica
         win.once('ready-to-show', () => {
           try {
             const { WindowsControl } = require('windows-control')
             const hwnd = win.getNativeWindowHandle()
-            
+
             // 启用 Mica 效果
             WindowsControl.setWindowAttribute(hwnd, 'DWMWA_SYSTEMBACKDROP_TYPE', 2)
-            
+
             // 如果要使用 Acrylic 效果，可以设置为 3
             // WindowsControl.setWindowAttribute(hwnd, 'DWMWA_SYSTEMBACKDROP_TYPE', 3)
-            
+
             // 如果要使用 Tabbed 效果，可以设置为 4
             // WindowsControl.setWindowAttribute(hwnd, 'DWMWA_SYSTEMBACKDROP_TYPE', 4)
           } catch (e) {
@@ -116,6 +116,20 @@ if (!gotTheLock) {
 
     win.webContents.on('did-finish-load', () => {
       win.webContents.send('ready')
+      // 初始化时发送当前系统主题
+      console.log('原生主题变化', nativeTheme.shouldUseDarkColors ? 'dark' : 'light')
+      win.webContents.send('native-theme-updated', nativeTheme.shouldUseDarkColors ? 'dark' : 'light')
+    })
+
+    // 监听原生主题变化
+    nativeTheme.on('updated', () => {
+      console.log('原生主题变化', nativeTheme.shouldUseDarkColors ? 'dark' : 'light')
+      win.webContents.send('native-theme-updated', nativeTheme.shouldUseDarkColors ? 'dark' : 'light')
+    })
+
+    // 添加主题相关的 IPC 处理器
+    ipcMain.handle('get-native-theme', () => {
+      return nativeTheme.shouldUseDarkColors ? 'dark' : 'light'
     })
 
     app.on('window-all-closed', () => {
@@ -160,7 +174,7 @@ if (!gotTheLock) {
         filters: [{ name: 'JSON', extensions: ['json'] }],
         securityScopedBookmarks: true,  // 添加安全作用域书签支持
       })
-      
+
       if (!result.canceled && result.filePaths.length > 0) {
         try {
           const content = fs.readFileSync(result.filePaths[0], 'utf-8')
@@ -183,7 +197,7 @@ if (!gotTheLock) {
         if (result.canceled) return false
         filePath = result.filePath
       }
-      
+
       try {
         fs.writeFileSync(filePath, JSON.stringify(content, null, 2))
         return true
@@ -193,4 +207,4 @@ if (!gotTheLock) {
       }
     })
   })
-} 
+}
