@@ -13,68 +13,24 @@ import { cn } from '@/lib/utils'
 import { ConfigFieldRenderer } from './config-field-renderer'
 import { useArrayOperations } from '@/hooks/use-array-operations';
 import { useEnvOperations } from '@/hooks/use-env-operations';
-
-// 声明全局 electronAPI
-declare global {
-  interface Window {
-    electronAPI: {
-      openFile: () => Promise<any>
-      saveFile: (data: any) => Promise<boolean>
-      windowControl: {
-        minimize: () => Promise<void>
-        maximize: () => Promise<void>
-        close: () => Promise<void>
-        isMaximized: () => Promise<boolean>
-      }
-      platform: string
-    }
-    require?: any
-  }
-}
-
-// 使用 window.electron 代替直接导入
-const { } = window.require ? window.require('electron') : {}
+import { useFileOperations } from '@/hooks/use-file-operations';
+import { electronAPI } from '@/utils/electron-api';
 
 export const MCPConfigEditor: React.FC = () => {
   const { t } = useTranslation()
-  const [config, setConfig] = useState<MCPConfig | null>(null)
-  const [currentPath, setCurrentPath] = useState<string>('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   const [newServerName, setNewServerName] = useState('')
-  const [importConfig, setImportConfig] = useState('')
-
-  const handleOpenFile = async () => {
-    try {
-      setLoading(true)
-      setError(null)
-      const result = await window.electronAPI.openFile()
-      if (result) {
-        setConfig(JSON.parse(result.content))
-        setCurrentPath(result.path)
-      }
-    } catch (err) {
-      setError(t('errors.openFileFailed', { message: (err as Error).message }))
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleSaveFile = async () => {
-    if (!config) return
-    try {
-      setLoading(true)
-      setError(null)
-      await window.electronAPI.saveFile({
-        content: config,
-        path: currentPath
-      })
-    } catch (err) {
-      setError(t('errors.saveFileFailed', { message: (err as Error).message }))
-    } finally {
-      setLoading(false)
-    }
-  }
+  const {
+    config,
+    setConfig,
+    loading,
+    error,
+    setError,
+    importConfig,
+    setImportConfig,
+    handleOpenFile,
+    handleSaveFile,
+    handleImportConfig
+  } = useFileOperations();
 
   const addNewServer = () => {
     if (!config || !newServerName.trim()) return
@@ -133,39 +89,6 @@ export const MCPConfigEditor: React.FC = () => {
     handleEnvKeyChange
   } = useEnvOperations(updateServerConfig);
 
-  const handleImportConfig = () => {
-    try {
-      let parsedConfig = JSON.parse(importConfig)
-
-      // 如果是完整的 MCP 配置格式
-      if ('mcpServers' in parsedConfig) {
-        setConfig(prev => ({
-          ...prev,
-          mcpServers: {
-            ...prev?.mcpServers,
-            ...parsedConfig.mcpServers
-          }
-        }))
-      }
-      // 如果是单个服务器配置
-      else {
-        const serverName = Object.keys(parsedConfig)[0]
-        const serverConfig = parsedConfig[serverName]
-        setConfig(prev => ({
-          ...prev,
-          mcpServers: {
-            ...prev?.mcpServers,
-            [serverName]: serverConfig
-          }
-        }))
-      }
-      setImportConfig('')
-      setError(null)
-    } catch (err) {
-      setError('导入配置失败：' + (err as Error).message)
-    }
-  }
-
   if (!config) {
     return (
       <div className="flex flex-col items-center justify-center h-screen">
@@ -209,84 +132,100 @@ export const MCPConfigEditor: React.FC = () => {
 
   return (
     <div className="flex-1 overflow-y-auto">
-      <div className="container mx-auto p-6">
+      <div className={cn(
+        "mx-auto relative flex flex-col h-[calc(100vh-theme(height.header))]"
+      )}>
         {error && (
           <Alert variant="destructive" className="mb-4">
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
 
-        <div className="flex justify-between mb-6">
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={handleOpenFile}
-              disabled={loading}
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {t('buttons.processing')}
-                </>
-              ) : t('buttons.open')}
-            </Button>
-            <Button
-              variant="default"
-              onClick={handleSaveFile}
-              disabled={loading || !config}
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {t('buttons.processing')}
-                </>
-              ) : t('buttons.save')}
-            </Button>
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button variant="outline">
-                  <FileUp className="h-4 w-4 mr-2" />
-                  {t('buttons.import')}
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>{t('dialog.importConfig')}</DialogTitle>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="space-y-2">
-                    <Textarea
-                      placeholder={t('dialog.importPlaceholder')}
-                      value={importConfig}
-                      onChange={(e) => setImportConfig(e.target.value)}
-                      className="min-h-[200px]"
-                    />
-                  </div>
-                  <Button onClick={handleImportConfig}>
+        <div className={cn(
+          "border-b py-4 w-full",
+          // "flex justify-center",
+        )}>
+          <div className={cn(
+            // "container",
+            "px-4",
+            "flex justify-between"
+          )}>
+
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={handleOpenFile}
+                disabled={loading}
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {t('buttons.processing')}
+                  </>
+                ) : t('buttons.open')}
+              </Button>
+              <Button
+                variant="default"
+                onClick={handleSaveFile}
+                disabled={loading || !config}
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {t('buttons.processing')}
+                  </>
+                ) : t('buttons.save')}
+              </Button>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="outline">
+                    <FileUp className="h-4 w-4 mr-2" />
                     {t('buttons.import')}
                   </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>{t('dialog.importConfig')}</DialogTitle>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="space-y-2">
+                      <Textarea
+                        placeholder={t('dialog.importPlaceholder')}
+                        value={importConfig}
+                        onChange={(e) => setImportConfig(e.target.value)}
+                        className="min-h-[200px]"
+                      />
+                    </div>
+                    <Button onClick={handleImportConfig}>
+                      {t('buttons.import')}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+            <div className="flex items-center gap-2">
+              <Input
+                placeholder={t('placeholders.newServerName')}
+                value={newServerName}
+                onChange={(e) => setNewServerName(e.target.value)}
+              />
+              <Button
+                variant="outline"
+                onClick={addNewServer}
+                disabled={!newServerName.trim()}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                {t('buttons.add')}
+              </Button>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Input
-              placeholder={t('placeholders.newServerName')}
-              value={newServerName}
-              onChange={(e) => setNewServerName(e.target.value)}
-            />
-            <Button
-              variant="outline"
-              onClick={addNewServer}
-              disabled={!newServerName.trim()}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              {t('buttons.add')}
-            </Button>
-          </div>
+
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className={cn(
+          "grid grid-cols-2 gap-4 py-6 flex-1 overflow-y-auto",
+          "px-4",
+        )}>
           {Object.entries(config.mcpServers).map(([serverName, serverConfig]) => (
             <Card key={serverName}>
               <CardHeader className="flex flex-row items-center justify-between pb-2 !pt-1">

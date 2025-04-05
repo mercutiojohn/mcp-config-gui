@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { MCPConfigEditor } from './components/editor'
+import { MCPConfigEditor } from './components/main-editor'
 import { Minus, Square, Maximize2, X as Close } from 'lucide-react'
 import { ThemeProvider } from "@/components/theme-provider"
 import { cn } from './lib/utils'
@@ -45,14 +45,14 @@ function App() {
             </div>
           </div>
         ) : (
-          <div className="h-9 flex items-center justify-center border-b select-none app-region-drag w-screen vibrancy-header-custom">
+          <div className="h-header flex items-center justify-center border-b select-none app-region-drag w-screen vibrancy-header-custom">
             <span className='text-sm'>MCP Config</span>
           </div>
         )}
         <div className={`flex-1 overflow-auto ${isMac ? cn(
           // 'vibrancy-content-custom',
           'bg-background'
-          ) : 'bg-background'}`}>
+        ) : 'bg-background'}`}>
           <MCPConfigEditor />
         </div>
       </div>
