@@ -17,6 +17,7 @@ import { useFileOperations } from '@/hooks/use-file-operations';
 import { electronAPI } from '@/utils/electron-api';
 import { useWindowControls } from '@/hooks/use-window-controls'
 import { ModeToggle } from './mode-toggle'
+import { Switch } from "@/components/ui/switch"
 
 export const MCPConfigEditor: React.FC = () => {
   const { t } = useTranslation()
@@ -242,6 +243,19 @@ export const MCPConfigEditor: React.FC = () => {
                     </span>
                   </CardTitle>
                   <div className="flex items-center gap-2">
+                    {/* 添加禁用开关 */}
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-muted-foreground">{t('fields.disabled')}</span>
+                      <Switch
+                        checked={Boolean(serverConfig.disabled)}
+                        onCheckedChange={(checked) => {
+                          updateServerConfig(serverName, {
+                            ...serverConfig,
+                            disabled: checked
+                          })
+                        }}
+                      />
+                    </div>
                     <div className="">
                       <Dialog>
                         <DialogTrigger asChild>
@@ -349,6 +363,8 @@ export const MCPConfigEditor: React.FC = () => {
                 <CardContent className=''>
                   <div className="flex flex-col gap-2">
                     {Object.entries(serverConfig).map(([key, value]) => {
+                      // 跳过禁用字段，因为它已经在卡片头部显示为开关
+                      if (key === 'disabled') return null;
                       return (
                         <div key={key} className="space-y-1">
                           <label className="text-xs font-medium text-muted-foreground">
@@ -369,6 +385,7 @@ export const MCPConfigEditor: React.FC = () => {
                             onEnvDelete={handleEnvDelete}
                             onEnvAdd={handleEnvAdd}
                             onEnvKeyChange={handleEnvKeyChange}
+                            renderDisabled={false} // 不再渲染disable字段
                           />
                         </div>
                       );

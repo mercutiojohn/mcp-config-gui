@@ -24,6 +24,8 @@ interface ConfigFieldRendererProps {
   onEnvDelete: (serverName: string, serverConfig: ServerConfig, key: string) => void;
   onEnvAdd: (serverName: string, serverConfig: ServerConfig) => void;
   onEnvKeyChange: (serverName: string, serverConfig: ServerConfig, oldKey: string, newKey: string, value: string) => void;
+  // 是否渲染 disabled 字段（设置页面需要，卡片列表不需要）
+  renderDisabled?: boolean;
 }
 
 export const ConfigFieldRenderer: React.FC<ConfigFieldRendererProps> = ({
@@ -40,8 +42,14 @@ export const ConfigFieldRenderer: React.FC<ConfigFieldRendererProps> = ({
   onEnvChange,
   onEnvDelete,
   onEnvAdd,
-  onEnvKeyChange
+  onEnvKeyChange,
+  renderDisabled = true
 }) => {
+  // 如果是 disabled 字段且不需要渲染，则跳过
+  if (fieldKey === 'disabled' && !renderDisabled && !isEditing) {
+    return null;
+  }
+
   if (!isEditing) {
     // 只读模式的渲染
     if (Array.isArray(value)) {
