@@ -250,11 +250,11 @@ export const MCPConfigEditor: React.FC = () => {
                             {t('buttons.editDetails')}
                           </Button>
                         </DialogTrigger>
-                        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+                        <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
                           <DialogHeader>
                             <DialogTitle>{t('dialog.serverSettings')} - {serverName}</DialogTitle>
                           </DialogHeader>
-                          <div className="grid gap-4 py-4">
+                          <div className="grid gap-4 py-4 overflow-y-auto flex-1">
                             <div className="space-y-4">
                               <h4 className="font-medium">{t('dialog.serverType')}</h4>
                               <Select
