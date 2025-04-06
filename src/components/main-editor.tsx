@@ -344,18 +344,7 @@ export const MCPConfigEditor: React.FC = () => {
             </TabsContent>
             <TabsContent value="relationship">
               <ServerRelationshipView
-                serverNames={config ? Object.keys(config.mcpServers) : []}
-                serverConfigs={config ? config.mcpServers : {}}
-                updateServerConfig={updateServerConfig}
-                deleteServer={deleteServer}
-                handleArrayItemChange={handleArrayItemChange}
-                handleArrayItemMove={handleArrayItemMove}
-                handleArrayItemDelete={handleArrayItemDelete}
-                handleArrayItemAdd={handleArrayItemAdd}
-                handleEnvChange={handleEnvChange}
-                handleEnvDelete={handleEnvDelete}
-                handleEnvAdd={handleEnvAdd}
-                handleEnvKeyChange={handleEnvKeyChange}
+              // generateConfigId={generateConfigId} // 如果有的话
               />
             </TabsContent>
           </Tabs>

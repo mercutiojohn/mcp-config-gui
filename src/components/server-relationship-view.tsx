@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   ReactFlow,
   Node,
@@ -15,160 +15,333 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { Button } from './ui/button';
-import { ServerConfig } from '@/types/mcp-config';
+import { ServerConfig, MCPConfig } from '@/types/mcp-config';
 import { ServerCardNode } from './custom-nodes/server-card-node';
+import { FileNode } from './custom-nodes/file-node';
+import { useFileOperations } from '@/hooks/use-file-operations';
+import { useArrayOperations } from '@/hooks/use-array-operations';
+import { useEnvOperations } from '@/hooks/use-env-operations';
+import { on } from 'events';
 
 interface ServerRelationshipViewProps {
-  serverNames: string[];
-  serverConfigs: Record<string, ServerConfig>;
-  updateServerConfig: (serverName: string, newConfig: ServerConfig) => void;
-  deleteServer: (serverName: string) => void;
-  handleArrayItemChange: (serverName: string, key: string, index: number, value: string) => void;
-  handleArrayItemMove: (serverName: string, key: string, index: number, direction: 'up' | 'down') => void;
-  handleArrayItemDelete: (serverName: string, key: string, index: number) => void;
-  handleArrayItemAdd: (serverName: string, key: string, value: string) => void;
-  handleEnvChange: (serverName: string, key: string, value: string) => void;
-  handleEnvDelete: (serverName: string, key: string) => void;
-  handleEnvAdd: (serverName: string, key: string, value: string) => void;
-  handleEnvKeyChange: (serverName: string, oldKey: string, newKey: string) => void;
+  generateConfigId?: (config: MCPConfig) => string;
 }
 
-// 注册自定义节点类型
 const nodeTypes: NodeTypes = {
   serverCard: ServerCardNode,
+  fileNode: FileNode,
 };
 
 export const ServerRelationshipView: React.FC<ServerRelationshipViewProps> = ({
-  serverNames,
-  serverConfigs,
-  updateServerConfig,
-  deleteServer,
-  handleArrayItemChange,
-  handleArrayItemMove,
-  handleArrayItemDelete,
-  handleArrayItemAdd,
-  handleEnvChange,
-  handleEnvDelete,
-  handleEnvAdd,
-  handleEnvKeyChange,
+  generateConfigId,
 }) => {
-  // 创建初始节点，使用自定义节点类型
-  const initialNodes: Node[] = serverNames.map((name, index) => ({
-    id: name,
-    type: 'serverCard', // 使用自定义节点类型
-    data: {
-      label: name,
-      serverConfig: serverConfigs[name],
-      updateServerConfig,
-      deleteServer,
-      handleArrayItemChange,
-      handleArrayItemMove,
-      handleArrayItemDelete,
-      handleArrayItemAdd,
-      handleEnvChange,
-      handleEnvDelete,
-      handleEnvAdd,
-      handleEnvKeyChange,
-    },
-    position: {
-      x: (index % 3) * 400,
-      y: Math.floor(index / 3) * 300
-    },
-  }));
+  const {
+    config,
+    setConfig,
+    pathHistory,
+    selectSavePath,
+  } = useFileOperations();
 
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [showFiles, setShowFiles] = useState(true);
 
-  const onConnect = useCallback((connection: Connection) => {
-    setEdges((eds) => addEdge(connection, eds));
-  }, [setEdges]);
+  const updateServerConfig = useCallback((serverName: string, newConfig: ServerConfig) => {
+    setConfig(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        mcpServers: {
+          ...prev.mcpServers,
+          [serverName]: newConfig
+        }
+      };
+    });
+  }, [setConfig]);
 
-  // 重置布局
-  const resetLayout = () => {
-    setNodes((nodes) =>
-      nodes.map((node, index) => ({
+  const deleteServer = useCallback((serverName: string) => {
+    setConfig(prev => {
+      if (!prev) return prev;
+      const newConfig = { ...prev };
+      delete newConfig.mcpServers[serverName];
+      return newConfig;
+    });
+  }, [setConfig]);
+
+  const {
+    handleArrayItemChange,
+    handleArrayItemDelete,
+    handleArrayItemAdd,
+    handleArrayItemMove
+  } = useArrayOperations(updateServerConfig);
+
+  const {
+    handleEnvChange,
+    handleEnvDelete,
+    handleEnvAdd,
+    handleEnvKeyChange
+  } = useEnvOperations(updateServerConfig);
+
+  const createServerNodes = useCallback((safeServerConfigs: Record<string, ServerConfig>) => {
+    return Object.entries(safeServerConfigs).map(([name, serverConfig], index) => ({
+      id: `server-${name}`,
+      type: 'serverCard',
+      data: {
+        label: name,
+        serverConfig,
+        updateServerConfig,
+        deleteServer,
+        handleArrayItemChange,
+        handleArrayItemMove,
+        handleArrayItemDelete,
+        handleArrayItemAdd,
+        handleEnvChange,
+        handleEnvDelete,
+        handleEnvAdd,
+        handleEnvKeyChange,
+      },
+      position: {
+        x: (index % 3) * 400,
+        y: Math.floor(index / 3) * 300,
+      },
+    }));
+  }, [
+    updateServerConfig,
+    deleteServer,
+    handleArrayItemChange,
+    handleArrayItemMove,
+    handleArrayItemDelete,
+    handleArrayItemAdd,
+    handleEnvChange,
+    handleEnvDelete,
+    handleEnvAdd,
+    handleEnvKeyChange,
+  ]);
+
+  const createFileNodes = useCallback((safePathHistory: string[], startIndex: number) => {
+    return safePathHistory.map((path, index) => ({
+      id: `file-${path}`,
+      type: 'fileNode',
+      data: {
+        label: path.split('/').pop() || path,
+        path,
+        onSelect: () => selectSavePath(path),
+      },
+      position: {
+        x: ((startIndex + index) % 3) * 400,
+        y: Math.floor((startIndex + index) / 3) * 300,
+      },
+    }));
+  }, [selectSavePath]);
+
+  useEffect(() => {
+    if (config) {
+      const safeServerConfigs = config.mcpServers || {};
+      const safePathHistory = Array.isArray(pathHistory) ? pathHistory : [];
+
+      // 创建服务器节点
+      const serverNodes = createServerNodes(safeServerConfigs);
+
+      // 创建文件节点
+      const fileNodes = createFileNodes(safePathHistory, Object.keys(safeServerConfigs).length);
+
+      // 设置文件节点的隐藏状态
+      const visibleFileNodes = fileNodes.map(node => ({
         ...node,
-        position: {
-          x: (index % 3) * 400,
-          y: Math.floor(index / 3) * 300
-        },
-      }))
-    );
-  };
+        hidden: !showFiles
+      }));
 
-  // 分析依赖关系并自动创建连接
-  const analyzeDependencies = () => {
-    // 清除现有连接
-    setEdges([]);
+      // 合并节点并更新
+      setNodes([...serverNodes, ...visibleFileNodes]);
+    }
+  }, [config, pathHistory, showFiles]);
 
-    // 创建新连接 - 基于依赖分析
+  const toggleFiles = useCallback(() => {
+    setNodes(currentNodes => {
+      return currentNodes.map(node => {
+        // 只修改文件节点的隐藏状态
+        if (node.id.startsWith('file-')) {
+          return { ...node, hidden: showFiles };
+        }
+        return node;
+      });
+    });
+
+    setShowFiles(prev => !prev);
+  }, [showFiles]);
+
+  const resetLayout = useCallback(() => {
+    const safeServerConfigs = config?.mcpServers || {};
+
+    setNodes(currentNodes => {
+      return currentNodes.map(node => {
+        const serverCount = Object.keys(safeServerConfigs).length;
+        const isServerNode = node.id.startsWith('server-');
+
+        // 根据节点类型确定索引
+        let index = 0;
+        if (isServerNode) {
+          // 对于服务器节点，从服务器名称获取索引
+          const serverName = node.id.replace('server-', '');
+          index = Object.keys(safeServerConfigs).indexOf(serverName);
+        } else {
+          // 对于文件节点，从当前节点列表中确定索引
+          const fileIndex = currentNodes
+            .filter(n => n.id.startsWith('file-'))
+            .findIndex(n => n.id === node.id);
+          index = serverCount + (fileIndex !== -1 ? fileIndex : 0);
+        }
+
+        return {
+          ...node,
+          position: {
+            x: (index % 3) * 400,
+            y: Math.floor(index / 3) * 300,
+          }
+        };
+      });
+    });
+  }, [config]);
+
+  const onConnect = useCallback(
+    (connection: Connection) => {
+      setEdges((eds) => addEdge(connection, eds));
+    },
+    [setEdges]
+  );
+
+  const pathMappings = {};
+
+  const analyzeDependencies = useCallback(() => {
+    const safeServerConfigs = config?.mcpServers || {};
+    const safePathHistory = Array.isArray(pathHistory) ? pathHistory : [];
+    const safeMappings = pathMappings || {};
+
     const newEdges: Edge[] = [];
 
-    serverNames.forEach(sourceName => {
-      const sourceConfig = serverConfigs[sourceName];
+    Object.keys(safeServerConfigs).forEach((sourceName) => {
+      const sourceConfig = safeServerConfigs[sourceName] || {};
+      const sourceNodeId = `server-${sourceName}`;
 
-      // 检查 waitFor 依赖
       if (sourceConfig.waitFor && Array.isArray(sourceConfig.waitFor)) {
         sourceConfig.waitFor.forEach((targetName: string) => {
-          if (serverNames.includes(targetName)) {
+          if (Object.keys(safeServerConfigs).includes(targetName)) {
             newEdges.push({
-              id: `${sourceName}-${targetName}`,
-              source: sourceName,
-              target: targetName,
+              id: `${sourceNodeId}-server-${targetName}`,
+              source: sourceNodeId,
+              target: `server-${targetName}`,
               label: '等待',
               animated: true,
+              style: { stroke: '#00bcd4' },
             });
           }
         });
       }
 
-      // 检查 readyWhen 中的 http 依赖
       if (sourceConfig.readyWhen && sourceConfig.readyWhen.http) {
         const httpUrl = sourceConfig.readyWhen.http.url;
-        // 简单处理: 如果URL包含另一个服务名, 可能存在依赖
-        serverNames.forEach(targetName => {
+        Object.keys(safeServerConfigs).forEach((targetName) => {
           if (sourceName !== targetName && httpUrl?.includes(targetName)) {
             newEdges.push({
-              id: `${sourceName}-${targetName}-http`,
-              source: sourceName,
-              target: targetName,
+              id: `${sourceNodeId}-server-${targetName}-http`,
+              source: sourceNodeId,
+              target: `server-${targetName}`,
               label: 'HTTP依赖',
+              style: { stroke: '#ff9800' },
             });
           }
         });
       }
     });
 
-    setEdges(newEdges);
-  };
+    if (config && generateConfigId) {
+      const currentConfigId = generateConfigId(config);
 
-  return (
-    <div style={{ width: '100%', height: '70vh', border: '1px solid #ddd' }}>
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
-        nodeTypes={nodeTypes}
-        fitView
-      >
-        <Background />
-        <Controls />
-        <MiniMap />
-        <Panel position="top-right">
-          <div className="flex gap-2">
-            <Button onClick={resetLayout} variant="outline" size="sm">
-              重置布局
-            </Button>
-            <Button onClick={analyzeDependencies} variant="outline" size="sm">
-              分析依赖关系
-            </Button>
-          </div>
-        </Panel>
-      </ReactFlow>
-    </div>
-  );
+      Object.entries(safeMappings).forEach(([configId, path]) => {
+        if (safePathHistory.includes(path)) {
+          if (configId === currentConfigId) {
+            if (Object.keys(safeServerConfigs).length > 0) {
+              Object.keys(safeServerConfigs).forEach((serverName) => {
+                newEdges.push({
+                  id: `file-${path}-server-${serverName}`,
+                  source: `file-${path}`,
+                  target: `server-${serverName}`,
+                  label: '配置',
+                  style: { stroke: '#4caf50' },
+                });
+              });
+            }
+          } else {
+            const serverNamesFromId = configId
+              .split('|')
+              .filter((name) => name !== 'empty-config');
+
+            serverNamesFromId.forEach((serverName) => {
+              if (Object.keys(safeServerConfigs).includes(serverName)) {
+                newEdges.push({
+                  id: `file-${path}-server-${serverName}`,
+                  source: `file-${path}`,
+                  target: `server-${serverName}`,
+                  label: '历史配置',
+                  style: { stroke: '#9e9e9e' },
+                });
+              }
+            });
+          }
+        }
+      });
+    }
+
+    setEdges(newEdges);
+  }, [
+    config,
+    pathHistory,
+    pathMappings,
+    generateConfigId,
+    setEdges,
+  ]);
+
+  if (!config) {
+    return null;
+  }
+
+  try {
+    return (
+      <div style={{ width: '100%', height: '70vh', border: '1px solid #ddd' }}>
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          nodeTypes={nodeTypes}
+          fitView
+        >
+          <Background />
+          <Controls />
+          <MiniMap />
+          <Panel position="top-right">
+            <div className="flex gap-2">
+              <Button onClick={resetLayout} variant="outline" size="sm">
+                重置布局
+              </Button>
+              <Button onClick={analyzeDependencies} variant="outline" size="sm">
+                分析依赖关系
+              </Button>
+              <Button onClick={toggleFiles} variant="outline" size="sm">
+                {showFiles ? '隐藏文件' : '显示文件'}
+              </Button>
+            </div>
+          </Panel>
+        </ReactFlow>
+      </div>
+    );
+  } catch (error) {
+    console.error('Error in ServerRelationshipView:', error);
+    return null;
+  }
+
+
 };
 
 export default ServerRelationshipView;
