@@ -30,6 +30,8 @@ export const fileState = proxy({
   error: null as string | null,
   importConfig: '',
   selectedServers: {} as { [key: string]: boolean },
+  // 添加 isMac 属性
+  // isMac: navigator.platform.toUpperCase().indexOf('MAC') >= 0, // 检测是否为 Mac 系统
 });
 
 // 初始化从localStorage加载数据
@@ -270,8 +272,11 @@ export const fileOperations = {
       // 获取当前配置应该保存的路径
       const savePath = customPath || fileState.currentPath || fileOperations.getPathForConfig(fileState.config);
 
+      // 将对象转换为JSON字符串，确保可以序列化
+      const contentToSave = JSON.stringify(selectedConfig, null, 2);
+
       const saveResult = await electronAPI.saveFile({
-        content: selectedConfig,
+        content: JSON.parse(contentToSave),  // 改为字符串
         path: savePath,
       });
 
@@ -285,6 +290,7 @@ export const fileOperations = {
       }
     } catch (err) {
       fileState.error = `保存文件失败：${(err as Error).message}`;
+      console.error('Save file error:', err);
     } finally {
       fileState.loading = false;
     }
