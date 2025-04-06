@@ -22,10 +22,15 @@ import { ImportConfigDialog } from './dialogs/import-config-dialog'
 import { ServerSettingsDialog } from './dialogs/server-settings-dialog'
 import { AddServerDialog } from './dialogs/add-server-dialog'
 
+// 新增导入
+import { ServerRelationshipView } from './server-relationship-view';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 export const MCPConfigEditor: React.FC = () => {
   const { t } = useTranslation()
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [customPath, setCustomPath] = useState('');
+  const [viewMode, setViewMode] = useState<'cards' | 'relationship'>('cards'); // 新增状态
   const {
     config,
     setConfig,
@@ -252,84 +257,108 @@ export const MCPConfigEditor: React.FC = () => {
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
-          <div className={cn(
-            "grid grid-cols-2 gap-4",
-          )}>
-            {Object.entries(config.mcpServers).map(([serverName, serverConfig]) => (
-              <Card key={serverName}>
-                <CardHeader className="flex flex-row items-center justify-between pb-2 !pt-1">
-                  <CardTitle className="text-lg font-bold truncate">
-                    {serverName}
-                    <span className="ml-2 text-sm text-muted-foreground">
-                      {serverTypeMap[getServerType(serverConfig)]}
-                    </span>
-                  </CardTitle>
-                  <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-2">
-                      {/* <span className="text-sm text-muted-foreground">{t('fields.enabled')}</span> */}
-                      <Switch
-                        checked={!Boolean(serverConfig.disabled)}
-                        onCheckedChange={(checked) => {
-                          updateServerConfig(serverName, {
-                            ...serverConfig,
-                            disabled: !checked
-                          })
-                        }}
-                      />
-                    </div>
-                    <div className="">
-                      {/* 使用提取的服务器设置对话框 */}
-                      <ServerSettingsDialog
-                        serverName={serverName}
-                        serverConfig={serverConfig}
-                        updateServerConfig={updateServerConfig}
-                        deleteServer={deleteServer}
-                        handleArrayItemChange={handleArrayItemChange}
-                        handleArrayItemMove={handleArrayItemMove}
-                        handleArrayItemDelete={handleArrayItemDelete}
-                        handleArrayItemAdd={handleArrayItemAdd}
-                        handleEnvChange={handleEnvChange}
-                        handleEnvDelete={handleEnvDelete}
-                        handleEnvAdd={handleEnvAdd}
-                        handleEnvKeyChange={handleEnvKeyChange}
-                      />
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className=''>
-                  <div className="flex flex-col gap-2">
-                    {Object.entries(serverConfig).map(([key, value]) => {
-                      if (key === 'disabled') return null;
-                      return (
-                        <div key={key} className="space-y-1">
-                          <label className="text-xs font-medium text-muted-foreground">
-                            {fieldNameMap[key] || key}
-                          </label>
-                          <ConfigFieldRenderer
-                            serverName={serverName}
-                            serverConfig={serverConfig}
-                            fieldKey={key}
-                            value={value}
-                            isEditing={false}
-                            onUpdateServerConfig={updateServerConfig}
-                            onArrayItemChange={handleArrayItemChange}
-                            onArrayItemMove={handleArrayItemMove}
-                            onArrayItemDelete={handleArrayItemDelete}
-                            onArrayItemAdd={handleArrayItemAdd}
-                            onEnvChange={handleEnvChange}
-                            onEnvDelete={handleEnvDelete}
-                            onEnvAdd={handleEnvAdd}
-                            onEnvKeyChange={handleEnvKeyChange}
-                            renderDisabled={false}
+          <Tabs defaultValue="cards" className="w-full">
+            <div className="flex justify-between mb-4">
+              <TabsList>
+                <TabsTrigger value="cards">{t('views.cardView')}</TabsTrigger>
+                <TabsTrigger value="relationship">{t('views.relationshipView')}</TabsTrigger>
+              </TabsList>
+            </div>
+            <TabsContent value="cards">
+              <div className={cn("grid grid-cols-2 gap-4")}>
+                {Object.entries(config.mcpServers).map(([serverName, serverConfig]) => (
+                  <Card key={serverName}>
+                    <CardHeader className="flex flex-row items-center justify-between pb-2 !pt-1">
+                      <CardTitle className="text-lg font-bold truncate">
+                        {serverName}
+                        <span className="ml-2 text-sm text-muted-foreground">
+                          {serverTypeMap[getServerType(serverConfig)]}
+                        </span>
+                      </CardTitle>
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2">
+                          {/* <span className="text-sm text-muted-foreground">{t('fields.enabled')}</span> */}
+                          <Switch
+                            checked={!Boolean(serverConfig.disabled)}
+                            onCheckedChange={(checked) => {
+                              updateServerConfig(serverName, {
+                                ...serverConfig,
+                                disabled: !checked
+                              })
+                            }}
                           />
                         </div>
-                      );
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                        <div className="">
+                          {/* 使用提取的服务器设置对话框 */}
+                          <ServerSettingsDialog
+                            serverName={serverName}
+                            serverConfig={serverConfig}
+                            updateServerConfig={updateServerConfig}
+                            deleteServer={deleteServer}
+                            handleArrayItemChange={handleArrayItemChange}
+                            handleArrayItemMove={handleArrayItemMove}
+                            handleArrayItemDelete={handleArrayItemDelete}
+                            handleArrayItemAdd={handleArrayItemAdd}
+                            handleEnvChange={handleEnvChange}
+                            handleEnvDelete={handleEnvDelete}
+                            handleEnvAdd={handleEnvAdd}
+                            handleEnvKeyChange={handleEnvKeyChange}
+                          />
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className=''>
+                      <div className="flex flex-col gap-2">
+                        {Object.entries(serverConfig).map(([key, value]) => {
+                          if (key === 'disabled') return null;
+                          return (
+                            <div key={key} className="space-y-1">
+                              <label className="text-xs font-medium text-muted-foreground">
+                                {fieldNameMap[key] || key}
+                              </label>
+                              <ConfigFieldRenderer
+                                serverName={serverName}
+                                serverConfig={serverConfig}
+                                fieldKey={key}
+                                value={value}
+                                isEditing={false}
+                                onUpdateServerConfig={updateServerConfig}
+                                onArrayItemChange={handleArrayItemChange}
+                                onArrayItemMove={handleArrayItemMove}
+                                onArrayItemDelete={handleArrayItemDelete}
+                                onArrayItemAdd={handleArrayItemAdd}
+                                onEnvChange={handleEnvChange}
+                                onEnvDelete={handleEnvDelete}
+                                onEnvAdd={handleEnvAdd}
+                                onEnvKeyChange={handleEnvKeyChange}
+                                renderDisabled={false}
+                              />
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </TabsContent>
+            <TabsContent value="relationship">
+              <ServerRelationshipView
+                serverNames={config ? Object.keys(config.mcpServers) : []}
+                serverConfigs={config ? config.mcpServers : {}}
+                updateServerConfig={updateServerConfig}
+                deleteServer={deleteServer}
+                handleArrayItemChange={handleArrayItemChange}
+                handleArrayItemMove={handleArrayItemMove}
+                handleArrayItemDelete={handleArrayItemDelete}
+                handleArrayItemAdd={handleArrayItemAdd}
+                handleEnvChange={handleEnvChange}
+                handleEnvDelete={handleEnvDelete}
+                handleEnvAdd={handleEnvAdd}
+                handleEnvKeyChange={handleEnvKeyChange}
+              />
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </div>
