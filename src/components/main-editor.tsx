@@ -257,7 +257,7 @@ export const MCPConfigEditor: React.FC = () => {
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
-          <Tabs defaultValue="cards" className="w-full">
+          <Tabs defaultValue="cards" className="w-full h-full">
             <div className="flex justify-between mb-4">
               <TabsList>
                 <TabsTrigger value="cards">{t('views.cardView')}</TabsTrigger>
@@ -342,7 +342,7 @@ export const MCPConfigEditor: React.FC = () => {
                 ))}
               </div>
             </TabsContent>
-            <TabsContent value="relationship">
+            <TabsContent value="relationship" className='h-full'>
               <ServerRelationshipView
               // generateConfigId={generateConfigId} // 如果有的话
               />

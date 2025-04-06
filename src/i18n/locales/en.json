@@ -56,5 +56,9 @@
     "invalidServerConfig": "Invalid server configuration",
     "openFileFailed": "Failed to open file: {{message}}",
     "saveFileFailed": "Failed to save file: {{message}}"
+  },
+  "views": {
+    "cardView": "Card View",
+    "relationshipView": "Relationship View"
   }
 }

@@ -64,5 +64,9 @@
   "prompts": {
     "replaceConfig": "是否替换当前配置？选择\"否\"将合并配置。",
     "createNewConfig": "确定要创建新的配置吗？现有配置将被清除。"
+  },
+  "views": {
+    "cardView": "卡片视图",
+    "relationshipView": "关系视图"
   }
 }

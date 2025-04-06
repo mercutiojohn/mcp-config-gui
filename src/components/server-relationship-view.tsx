@@ -40,6 +40,8 @@ export const ServerRelationshipView: React.FC<ServerRelationshipViewProps> = ({
     setConfig,
     pathHistory,
     selectSavePath,
+    pathMappings,
+    setPathMappings,
   } = useFileOperations();
 
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
@@ -210,8 +212,6 @@ export const ServerRelationshipView: React.FC<ServerRelationshipViewProps> = ({
     [setEdges]
   );
 
-  const pathMappings = {};
-
   const analyzeDependencies = useCallback(() => {
     const safeServerConfigs = config?.mcpServers || {};
     const safePathHistory = Array.isArray(pathHistory) ? pathHistory : [];
@@ -307,33 +307,39 @@ export const ServerRelationshipView: React.FC<ServerRelationshipViewProps> = ({
 
   try {
     return (
-      <div style={{ width: '100%', height: '70vh', border: '1px solid #ddd' }}>
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
-          nodeTypes={nodeTypes}
-          fitView
-        >
-          <Background />
-          <Controls />
-          <MiniMap />
-          <Panel position="top-right">
-            <div className="flex gap-2">
-              <Button onClick={resetLayout} variant="outline" size="sm">
-                重置布局
-              </Button>
-              <Button onClick={analyzeDependencies} variant="outline" size="sm">
-                分析依赖关系
-              </Button>
-              <Button onClick={toggleFiles} variant="outline" size="sm">
-                {showFiles ? '隐藏文件' : '显示文件'}
-              </Button>
-            </div>
-          </Panel>
-        </ReactFlow>
+      <div className='flex h-full bg-background'>
+        <div className="flex-1 h-full">
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onConnect={onConnect}
+            nodeTypes={nodeTypes}
+            fitView
+          >
+            <Background />
+            <Controls />
+            <MiniMap />
+            <Panel position="top-right">
+              <div className="flex gap-2">
+                <Button onClick={resetLayout} variant="outline" size="sm">
+                  重置布局
+                </Button>
+                <Button onClick={analyzeDependencies} variant="outline" size="sm">
+                  分析依赖关系
+                </Button>
+                <Button onClick={toggleFiles} variant="outline" size="sm">
+                  {showFiles ? '隐藏文件' : '显示文件'}
+                </Button>
+              </div>
+            </Panel>
+          </ReactFlow>
+        </div>
+        <div className="w-[200px] h-full p-4 border">
+          <h2 className="text-lg font-semibold mb-4">Debug</h2>
+          123
+        </div>
       </div>
     );
   } catch (error) {
