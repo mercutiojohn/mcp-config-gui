@@ -39,23 +39,23 @@ export const PathHistoryDialog: React.FC<PathHistoryDialogProps> = ({
           {t('buttons.pathHistory')}
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="overflow-hidden">
         <DialogHeader>
           <DialogTitle>{t('dialog.pathHistoryTitle')}</DialogTitle>
         </DialogHeader>
-        <div className="py-4">
+        <div className="py-4 overflow-hidden">
           {pathHistory.length === 0 ? (
             <div className="text-center py-4 text-muted-foreground">
               {t('dialog.noPathHistory')}
             </div>
           ) : (
-            <ScrollArea className="h-[300px] w-full">
-              <div className="space-y-2">
+            <div className="h-[300px] w-full overflow-y-auto">
+              <div className="space-y-2 w-full">
                 {pathHistory.map((path, index) => (
                   <div
                     key={index}
                     className={cn(
-                      "flex items-center justify-between border rounded-md p-2 group",
+                      "flex items-center justify-between border rounded-md p-2 group w-full",
                       path === currentPath && "border-primary bg-primary/5"
                     )}
                   >
@@ -80,7 +80,7 @@ export const PathHistoryDialog: React.FC<PathHistoryDialogProps> = ({
                   </div>
                 ))}
               </div>
-            </ScrollArea>
+            </div>
           )}
         </div>
         <DialogFooter>

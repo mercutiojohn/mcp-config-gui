@@ -4,6 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { electronAPI } from '@/utils/electron-api';
+import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 
 interface SaveConfigDialogProps {
   open: boolean;
@@ -44,68 +47,58 @@ export const SaveConfigDialog: React.FC<SaveConfigDialogProps> = ({
         </DialogHeader>
         <div className="py-4">
           <div className="flex items-center space-x-2 mb-4">
-            <input
-              type="checkbox"
+            <Checkbox
               id="select-all"
-              className="w-4 h-4"
-              onChange={handleSelectAll}
               checked={Object.values(selectedServers).every(v => v)}
+              onCheckedChange={handleSelectAll}
             />
-            <label htmlFor="select-all" className="text-sm font-medium">
+            <Label htmlFor="select-all" className="text-sm font-medium">
               {t('dialog.selectAll')}
-            </label>
+            </Label>
           </div>
           <div className="space-y-2 max-h-[30vh] overflow-y-auto">
             {serverNames.map(serverName => (
               <div key={serverName} className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
+                <Checkbox
                   id={`server-${serverName}`}
                   checked={selectedServers[serverName] || false}
-                  onChange={() => toggleServerSelection(serverName)}
-                  className="w-4 h-4"
+                  onCheckedChange={() => toggleServerSelection(serverName)}
                 />
-                <label htmlFor={`server-${serverName}`} className="text-sm">
+                <Label htmlFor={`server-${serverName}`} className="text-sm">
                   {serverName}
-                </label>
+                </Label>
               </div>
             ))}
           </div>
           <div className="mt-6 space-y-4">
             <h4 className="font-medium text-sm">{t('dialog.savePath')}</h4>
-            <div className="flex items-center space-x-2">
-              <input
-                type="radio"
-                id="current-path"
-                name="save-path"
-                checked={!customPath}
-                onChange={() => setCustomPath('')}
-                className="w-4 h-4"
-              />
-              <label htmlFor="current-path" className="text-sm truncate">
-                {currentPath || t('dialog.defaultPath')}
-              </label>
-            </div>
-            {pathHistory.length > 0 && (
-              <div className="space-y-2 max-h-[20vh] overflow-y-auto border rounded p-2">
-                <p className="text-xs text-muted-foreground mb-1">{t('dialog.recentPaths')}</p>
-                {pathHistory.map((path, index) => (
-                  <div key={index} className="flex items-center space-x-2">
-                    <input
-                      type="radio"
-                      id={`path-${index}`}
-                      name="save-path"
-                      checked={customPath === path}
-                      onChange={() => setCustomPath(path)}
-                      className="w-4 h-4"
-                    />
-                    <label htmlFor={`path-${index}`} className="text-sm truncate">
-                      {path}
-                    </label>
-                  </div>
-                ))}
+            <RadioGroup value={customPath} onValueChange={(value) => setCustomPath(value)}>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="" id="current-path" checked={!customPath} />
+                <Label htmlFor="current-path" className="text-sm truncate">
+                  {currentPath || t('dialog.defaultPath')}
+                </Label>
               </div>
-            )}
+
+              {pathHistory.length > 0 && (
+                <div className="space-y-2 max-h-[20vh] overflow-y-auto border rounded p-2">
+                  <p className="text-xs text-muted-foreground mb-1">{t('dialog.recentPaths')}</p>
+                  {pathHistory.map((path, index) => (
+                    <div key={index} className="flex items-center space-x-2">
+                      <RadioGroupItem
+                        value={path}
+                        id={`path-${index}`}
+                        checked={customPath === path}
+                      />
+                      <Label htmlFor={`path-${index}`} className="text-sm truncate">
+                        {path}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </RadioGroup>
+
             <div className="mt-4">
               <p className="text-xs text-muted-foreground mb-1">{t('dialog.customPath')}</p>
               <div className="flex gap-2">

@@ -3,6 +3,7 @@ declare global {
     electronAPI: {
       openFile: () => Promise<any>
       saveFile: (data: any) => Promise<boolean>
+      selectSavePath: () => Promise<string | null>
       windowControl: {
         minimize: () => Promise<void>
         maximize: () => Promise<void>
