@@ -14,129 +14,133 @@ import { useEnvOperations } from '@/hooks/use-env-operations'
 import { useFileOperations } from '@/hooks/use-file-operations'
 import { useWindowControls } from '@/hooks/use-window-controls'
 
-export const ServerList: React.FC = () => {
-  const { t } = useTranslation()
-  // const state = useSnapshot(fileState)
-  // const { config, error } = state
+export const ServerList: React.FC<{
+  className?: string
+}> = ({
+  className
+}) => {
+    const { t } = useTranslation()
+    // const state = useSnapshot(fileState)
+    // const { config, error } = state
 
-  const {
-    config,
-    error,
-    setConfig,
-    loading,
-  } = useFileOperations();
+    const {
+      config,
+      error,
+      setConfig,
+      loading,
+    } = useFileOperations();
 
 
-  const { isMac } = useWindowControls();
+    const { isMac } = useWindowControls();
 
-  // 使用新的服务器操作 hook
-  const {
-    updateServerConfig,
-    deleteServer
-  } = useServerOperations(config, setConfig);
+    // 使用新的服务器操作 hook
+    const {
+      updateServerConfig,
+      deleteServer
+    } = useServerOperations(config, setConfig);
 
-  // 使用自定义 hooks
-  const {
-    handleArrayItemChange,
-    handleArrayItemDelete,
-    handleArrayItemAdd,
-    handleArrayItemMove
-  } = useArrayOperations(updateServerConfig);
+    // 使用自定义 hooks
+    const {
+      handleArrayItemChange,
+      handleArrayItemDelete,
+      handleArrayItemAdd,
+      handleArrayItemMove
+    } = useArrayOperations(updateServerConfig);
 
-  const {
-    handleEnvChange,
-    handleEnvDelete,
-    handleEnvAdd,
-    handleEnvKeyChange
-  } = useEnvOperations(updateServerConfig);
+    const {
+      handleEnvChange,
+      handleEnvDelete,
+      handleEnvAdd,
+      handleEnvKeyChange
+    } = useEnvOperations(updateServerConfig);
 
-  return (
-    <div className={cn(
-      "py-6 px-4 flex-1 overflow-y-auto",
-      isMac ? "vibrancy-content-custom" : "bg-background",
-    )}>
-      {error && (
-        <Alert variant="destructive" className="mb-4">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
+    return (
       <div className={cn(
-        "grid grid-cols-2 gap-4",
+        "py-6 px-4 overflow-y-auto",
+        className
       )}>
-        {Object.entries(config && config.mcpServers ? config.mcpServers : {})?.map(([serverName, serverConfig]) => (
-          <Card key={serverName}>
-            <CardHeader className="flex flex-row items-center justify-between pb-2 !pt-1">
-              <CardTitle className="text-lg font-bold truncate">
-                {serverName}
-                <span className="ml-2 text-sm text-muted-foreground">
-                  {serverTypeMap[getServerType(serverConfig)]}
-                </span>
-              </CardTitle>
-              <div className="flex items-center gap-2">
+        {error && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+        <div className={cn(
+          "grid grid-cols-2 gap-4",
+        )}>
+          {Object.entries(config && config.mcpServers ? config.mcpServers : {})?.map(([serverName, serverConfig]) => (
+            <Card key={serverName}>
+              <CardHeader className="flex flex-row items-center justify-between pb-2 !pt-1">
+                <CardTitle className="text-lg font-bold truncate">
+                  {serverName}
+                  <span className="ml-2 text-sm text-muted-foreground">
+                    {serverTypeMap[getServerType(serverConfig)]}
+                  </span>
+                </CardTitle>
                 <div className="flex items-center gap-2">
-                  <Switch
-                    checked={!Boolean(serverConfig.disabled)}
-                    onCheckedChange={(checked) => {
-                      updateServerConfig(serverName, {
-                        ...serverConfig,
-                        disabled: !checked
-                      })
-                    }}
-                  />
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      checked={!Boolean(serverConfig.disabled)}
+                      onCheckedChange={(checked) => {
+                        updateServerConfig(serverName, {
+                          ...serverConfig,
+                          disabled: !checked
+                        })
+                      }}
+                    />
+                  </div>
+                  <div className="">
+                    {/* 使用提取的服务器设置对话框 */}
+                    <ServerSettingsDialog
+                      serverName={serverName}
+                      serverConfig={serverConfig}
+                      updateServerConfig={updateServerConfig}
+                      deleteServer={deleteServer}
+                      handleArrayItemChange={handleArrayItemChange}
+                      handleArrayItemMove={handleArrayItemMove}
+                      handleArrayItemDelete={handleArrayItemDelete}
+                      handleArrayItemAdd={handleArrayItemAdd}
+                      handleEnvChange={handleEnvChange}
+                      handleEnvDelete={handleEnvDelete}
+                      handleEnvAdd={handleEnvAdd}
+                      handleEnvKeyChange={handleEnvKeyChange}
+                    />
+                  </div>
                 </div>
-                <div className="">
-                  {/* 使用提取的服务器设置对话框 */}
-                  <ServerSettingsDialog
-                    serverName={serverName}
-                    serverConfig={serverConfig}
-                    updateServerConfig={updateServerConfig}
-                    deleteServer={deleteServer}
-                    handleArrayItemChange={handleArrayItemChange}
-                    handleArrayItemMove={handleArrayItemMove}
-                    handleArrayItemDelete={handleArrayItemDelete}
-                    handleArrayItemAdd={handleArrayItemAdd}
-                    handleEnvChange={handleEnvChange}
-                    handleEnvDelete={handleEnvDelete}
-                    handleEnvAdd={handleEnvAdd}
-                    handleEnvKeyChange={handleEnvKeyChange}
-                  />
+              </CardHeader>
+              <CardContent className=''>
+                <div className="flex flex-col gap-2">
+                  {Object.entries(serverConfig).map(([key, value]) => {
+                    if (key === 'disabled') return null;
+                    return (
+                      <div key={key} className="space-y-1">
+                        <label className="text-xs font-medium text-muted-foreground">
+                          {t(`fields.${key}`) || key}
+                        </label>
+                        <ConfigFieldRenderer
+                          serverName={serverName}
+                          serverConfig={serverConfig}
+                          fieldKey={key}
+                          value={value}
+                          isEditing={false}
+                          onUpdateServerConfig={updateServerConfig}
+                          onArrayItemChange={handleArrayItemChange}
+                          onArrayItemMove={handleArrayItemMove}
+                          onArrayItemDelete={handleArrayItemDelete}
+                          onArrayItemAdd={handleArrayItemAdd}
+                          onEnvChange={handleEnvChange}
+                          onEnvDelete={handleEnvDelete}
+                          onEnvAdd={handleEnvAdd}
+                          onEnvKeyChange={handleEnvKeyChange}
+                          renderDisabled={false}
+                        />
+                      </div>
+                    );
+                  })}
                 </div>
-              </div>
-            </CardHeader>
-            <CardContent className=''>
-              <div className="flex flex-col gap-2">
-                {Object.entries(serverConfig).map(([key, value]) => {
-                  if (key === 'disabled') return null;
-                  return (
-                    <div key={key} className="space-y-1">
-                      <label className="text-xs font-medium text-muted-foreground">
-                        {t(`fields.${key}`) || key}
-                      </label>
-                      <ConfigFieldRenderer
-                        serverName={serverName}
-                        serverConfig={serverConfig}
-                        fieldKey={key}
-                        value={value}
-                        isEditing={false}
-                        onUpdateServerConfig={updateServerConfig}
-                        onArrayItemChange={handleArrayItemChange}
-                        onArrayItemMove={handleArrayItemMove}
-                        onArrayItemDelete={handleArrayItemDelete}
-                        onArrayItemAdd={handleArrayItemAdd}
-                        onEnvChange={handleEnvChange}
-                        onEnvDelete={handleEnvDelete}
-                        onEnvAdd={handleEnvAdd}
-                        onEnvKeyChange={handleEnvKeyChange}
-                        renderDisabled={false}
-                      />
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
-    </div>
-  )
-}
+    )
+  }

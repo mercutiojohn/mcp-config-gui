@@ -12,69 +12,78 @@ import { PathHistoryDialog } from './path-history-dialog'
 import { AddServerDialog } from './dialogs/add-server-dialog'
 import { useWindowControls } from '@/hooks/use-window-controls'
 
-export const TopBar: React.FC = () => {
-  const { t } = useTranslation()
-  // const state = useSnapshot(fileState)
-  // const { loading } = state
-  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
-  const [customPath, setCustomPath] = useState('');
+export const TopBar: React.FC<{
+  className?: string
+}> = ({
+  className
+}) => {
+    const { t } = useTranslation()
+    // const state = useSnapshot(fileState)
+    // const { loading } = state
+    const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+    const [customPath, setCustomPath] = useState('');
 
-  const {
-    config,
-    setConfig,
-    loading,
-    selectedServers,
-    pathHistory,
-    currentPath,
-    setCurrentPath,
-    handleOpenFile,
-    handleSaveFile,
-    handleImportConfig,
-    setImportConfig,
-    importConfig,
-    toggleServerSelection,
-    selectAllServers,
-    createNewConfig,
-    selectSavePath,
-    removePathFromHistory,
-    clearPathHistory,
-  } = useFileOperations();
+    const {
+      config,
+      setConfig,
+      loading,
+      selectedServers,
+      pathHistory,
+      currentPath,
+      setCurrentPath,
+      handleOpenFile,
+      handleSaveFile,
+      handleImportConfig,
+      setImportConfig,
+      importConfig,
+      toggleServerSelection,
+      selectAllServers,
+      createNewConfig,
+      selectSavePath,
+      removePathFromHistory,
+      clearPathHistory,
+      isPrepared,
+    } = useFileOperations();
 
-  const { isMac } = useWindowControls();
+    const { isMac } = useWindowControls();
 
-  const { addNewServer } = useServerOperations(config, setConfig);
+    const { addNewServer } = useServerOperations(config, setConfig);
 
-  // 检查配置是否为空
-  const isConfigEmpty = !config || Object.keys(config.mcpServers || {}).length === 0;
+    // 检查配置是否为空
+    const isConfigEmpty = !config || Object.keys(config.mcpServers || {}).length === 0;
 
-  const handleConfirmSave = async () => {
-    await handleSaveFile(customPath);
-    setSaveDialogOpen(false);
-    setCustomPath(''); // 清空自定义路径
-  };
+    const handleConfirmSave = async () => {
+      await handleSaveFile(customPath);
+      setSaveDialogOpen(false);
+      setCustomPath(''); // 清空自定义路径
+    };
 
-  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
-    selectAllServers(e.target.checked);
-  };
+    const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+      selectAllServers(e.target.checked);
+    };
 
-  const handleCreateNew = () => {
-    if (!isConfigEmpty) {
-      if (window.confirm(t('prompts.createNewConfig') || '确定要创建新的配置吗？现有配置将被清除。')) {
+    const handleCreateNew = () => {
+      if (!isConfigEmpty) {
+        if (window.confirm(t('prompts.createNewConfig') || '确定要创建新的配置吗？现有配置将被清除。')) {
+          createNewConfig();
+        }
+      } else {
         createNewConfig();
       }
-    } else {
-      createNewConfig();
     }
-  }
 
-  return (
-    <div className={cn(
-      "border-b py-4 w-full",
-      isMac ? "vibrancy-header-custom" : "bg-background",
-    )}>
+    if (!isPrepared) {
+      return (
+        <div className="flex justify-center items-center">
+          MCP Config
+        </div>
+      )
+    }
+
+    return (
       <div className={cn(
-        "px-4",
-        "flex justify-between"
+        "flex justify-between items-center",
+        className
       )}>
         <div className="flex gap-2 app-region-no-drag">
           {/* 打开文件对话框 */}
@@ -180,6 +189,5 @@ export const TopBar: React.FC = () => {
           </AddServerDialog>
         </div>
       </div>
-    </div>
-  )
-}
+    )
+  }

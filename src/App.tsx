@@ -3,6 +3,7 @@ import { Minus, Square, Maximize2, X as Close } from 'lucide-react'
 import { ThemeProvider } from "@/components/theme-provider"
 import { cn } from './lib/utils'
 import { useWindowControls } from './hooks/use-window-controls'
+import { TopBar } from './components/top-bar'
 
 function App() {
   const { isMac, isMaximized, handleWindowControl } = useWindowControls();
@@ -13,7 +14,11 @@ function App() {
         {!isMac ? (
           <div className="h-8 flex items-center justify-between bg-background border-b select-none app-region-drag">
             <div className="flex-1 px-4">
-              MCP Config
+              <TopBar className={cn(
+                "h-full",
+                "px-4 w-full",
+                isMac ? "vibrancy-header-custom" : "bg-background"
+              )} />
             </div>
             <div className="flex h-full">
               <button
@@ -37,8 +42,18 @@ function App() {
             </div>
           </div>
         ) : (
-          <div className="h-header flex items-center justify-center border-b select-none app-region-drag w-screen vibrancy-header-custom">
-            <span className='text-sm'>MCP Config</span>
+          // <div className="h-header flex items-center justify-center border-b select-none app-region-drag w-screen vibrancy-header-custom">
+          //   <span className='text-sm'>MCP Config</span>
+          // </div>
+          <div className={cn(
+            "h-header border-b",
+            isMac ? "pl-15" : ""
+          )}>
+            <TopBar className={cn(
+              "h-full",
+              "px-4 w-full",
+              isMac ? "vibrancy-header-custom" : "bg-background"
+            )} />
           </div>
         )}
         <div className={`flex-1 overflow-auto ${isMac ? cn(

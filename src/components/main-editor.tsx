@@ -8,6 +8,7 @@ import { Button } from './ui/button'
 import { File, Import, Plus } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { ImportConfigDialog } from './dialogs/import-config-dialog'
+import { useWindowControls } from '@/hooks/use-window-controls'
 
 export const MCPConfigEditor: React.FC = () => {
   const { t } = useTranslation()
@@ -17,10 +18,13 @@ export const MCPConfigEditor: React.FC = () => {
     createNewConfig,
     importConfig,
     setImportConfig,
-    handleImportConfig
+    handleImportConfig,
+    isPrepared
   } = useFileOperations();
 
-  if (!state.config || Object.keys(state.config.mcpServers || {}).length === 0) {
+  const { isMac } = useWindowControls();
+
+  if (!isPrepared) {
     return (
       <div className="flex flex-col items-center justify-center h-screen">
         <div className="flex gap-2">
@@ -60,11 +64,10 @@ export const MCPConfigEditor: React.FC = () => {
       <div className={cn(
         "mx-auto relative flex flex-col h-[calc(100vh-theme(height.header))]",
       )}>
-        {/* 顶栏 */}
-        <TopBar />
-
-        {/* 列表 */}
-        <ServerList />
+        <ServerList className={cn(
+          "flex-1",
+          isMac ? "vibrancy-content-custom" : "bg-background",
+        )} />
       </div>
     </div>
   )

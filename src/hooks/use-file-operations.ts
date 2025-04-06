@@ -394,5 +394,6 @@ export const useFileOperations = () => {
     getPathForConfig: fileOperations.getPathForConfig,
     createNewConfig: fileOperations.createNewConfig,
     selectSavePath: fileOperations.selectSavePath,
+    isPrepared: !(!state.config || Object.keys(state.config.mcpServers || {}).length === 0)
   };
 };
