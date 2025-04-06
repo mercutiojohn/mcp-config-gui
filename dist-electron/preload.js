@@ -5,6 +5,7 @@ const electron_1 = require("electron");
 electron_1.contextBridge.exposeInMainWorld('electronAPI', {
     openFile: () => electron_1.ipcRenderer.invoke('open-file'),
     saveFile: (data) => electron_1.ipcRenderer.invoke('save-file', data),
+    selectSavePath: () => electron_1.ipcRenderer.invoke('select-save-path'),
     windowControl: {
         minimize: () => electron_1.ipcRenderer.send('window-control', 'minimize'),
         maximize: () => electron_1.ipcRenderer.send('window-control', 'maximize'),

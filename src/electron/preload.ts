@@ -4,6 +4,7 @@ import { contextBridge, ipcRenderer } from 'electron'
 contextBridge.exposeInMainWorld('electronAPI', {
   openFile: () => ipcRenderer.invoke('open-file'),
   saveFile: (data: any) => ipcRenderer.invoke('save-file', data),
+  selectSavePath: () => ipcRenderer.invoke('select-save-path'),
   windowControl: {
     minimize: () => ipcRenderer.send('window-control', 'minimize'),
     maximize: () => ipcRenderer.send('window-control', 'maximize'),

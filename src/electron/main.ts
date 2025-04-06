@@ -206,5 +206,23 @@ if (!gotTheLock) {
         throw new Error('无法保存文件')
       }
     })
+
+    ipcMain.handle('select-save-path', async () => {
+      const { canceled, filePath } = await dialog.showSaveDialog({
+        properties: ['createDirectory'],
+        title: '选择保存位置',
+        buttonLabel: '选择',
+        // 可选：添加过滤器
+        // filters: [
+        //   { name: '配置文件', extensions: ['json', 'yaml', 'yml'] },
+        //   { name: '所有文件', extensions: ['*'] }
+        // ]
+      });
+
+      if (canceled) {
+        return undefined;
+      }
+      return filePath;
+    });
   })
 }
