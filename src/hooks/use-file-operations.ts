@@ -124,6 +124,17 @@ export const useFileOperations = () => {
     });
   };
 
+  // 删除路径历史中的特定项
+  const removePathFromHistory = (pathToRemove: string) => {
+    setPathHistory(prev => prev.filter(path => path !== pathToRemove));
+  };
+
+  // 清空路径历史
+  const clearPathHistory = () => {
+    setPathHistory([]);
+    localStorage.removeItem(STORAGE_KEYS.PATH_HISTORY);
+  };
+
   // 获取配置对应的保存路径
   const getPathForConfig = (configToCheck: MCPConfig): string => {
     const configId = generateConfigId(configToCheck);
@@ -359,7 +370,9 @@ export const useFileOperations = () => {
     setCurrentPath,
     pathMappings,
     pathHistory,
-    updatePathHistory, // 返回新函数供外部使用
+    updatePathHistory,
+    removePathFromHistory, // 新增：删除特定历史路径
+    clearPathHistory,      // 新增：清空历史路径
     loading,
     error,
     setError,

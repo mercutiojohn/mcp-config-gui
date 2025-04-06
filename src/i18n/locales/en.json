@@ -11,7 +11,8 @@
     "env": "Environment Variables",
     "autoApprove": "Auto Approve",
     "disabled": "Disabled",
-    "url": "URL"
+    "url": "URL",
+    "serverName": "Server Name"
   },
   "buttons": {
     "openFile": "Open File",
@@ -26,7 +27,9 @@
     "ok": "OK",
     "confirmExport": "Confirm Export",
     "new": "New Config",
-    "browse": "Browse"
+    "browse": "Browse",
+    "pathHistory": "Path History",
+    "clearHistory": "Clear History"
   },
   "dialog": {
     "serverSettings": "Server Settings",
@@ -38,7 +41,12 @@
     "selectConfigToExport": "Select Configuration to Export",
     "selectAll": "Select All",
     "savePath": "Save Path",
-    "defaultPath": "Default Path"
+    "defaultPath": "Default Path",
+    "pathHistoryTitle": "Path History",
+    "noPathHistory": "No Path History",
+    "addServer": {
+      "title": "Add New Server"
+    }
   },
   "placeholders": {
     "newServerName": "New Server Name"

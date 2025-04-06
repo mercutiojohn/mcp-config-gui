@@ -3,27 +3,29 @@ import { useTranslation } from 'react-i18next'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Loader2, Plus, Settings, FileUp, Check, Trash } from "lucide-react"
-import { MCPConfig, ServerConfig, getServerType, ServerType, serverTypeMap, fieldNameMap } from '@/types/mcp-config'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Loader2, Plus, FileUp } from "lucide-react"
+import { ServerConfig, getServerType, serverTypeMap, fieldNameMap } from '@/types/mcp-config'
 import { cn } from '@/lib/utils'
 import { ConfigFieldRenderer } from './config-field-renderer'
 import { useArrayOperations } from '@/hooks/use-array-operations';
 import { useEnvOperations } from '@/hooks/use-env-operations';
 import { useFileOperations } from '@/hooks/use-file-operations';
-import { electronAPI } from '@/utils/electron-api';
 import { useWindowControls } from '@/hooks/use-window-controls'
 import { ModeToggle } from './mode-toggle'
 import { Switch } from "@/components/ui/switch"
+import { PathHistoryDialog } from './path-history-dialog'
+
+// 导入新的对话框组件
+import { SaveConfigDialog } from './dialogs/save-config-dialog'
+import { ImportConfigDialog } from './dialogs/import-config-dialog'
+import { ServerSettingsDialog } from './dialogs/server-settings-dialog'
+import { AddServerDialog } from './dialogs/add-server-dialog'
 
 export const MCPConfigEditor: React.FC = () => {
   const { t } = useTranslation()
-  const [newServerName, setNewServerName] = useState('')
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
-  const [customPath, setCustomPath] = useState(''); // 新增：自定义路径
+  const [customPath, setCustomPath] = useState('');
   const {
     config,
     setConfig,
@@ -38,23 +40,25 @@ export const MCPConfigEditor: React.FC = () => {
     handleOpenFile,
     handleSaveFile,
     handleImportConfig,
-    pathHistory,        // 新增：路径历史
-    currentPath,        // 读取当前路径
-    selectSavePath,     // 新增：选择路径方法
-    createNewConfig     // 新增：创建新配置方法
+    pathHistory,
+    currentPath,
+    selectSavePath,
+    createNewConfig,
+    removePathFromHistory,
+    clearPathHistory
   } = useFileOperations();
 
   const { isMac } = useWindowControls();
 
-  const addNewServer = () => {
-    if (!config || !newServerName.trim()) return
+  const addNewServer = (serverName: string) => {
+    if (!config || !serverName.trim()) return
     setConfig(prev => {
       if (!prev) return prev
       return {
         ...prev,
         mcpServers: {
           ...prev.mcpServers,
-          [newServerName]: {
+          [serverName]: {
             command: 'npx',
             args: [],
             autoApprove: [],
@@ -63,7 +67,6 @@ export const MCPConfigEditor: React.FC = () => {
         }
       }
     })
-    setNewServerName('')
   }
 
   const deleteServer = (serverName: string) => {
@@ -108,7 +111,7 @@ export const MCPConfigEditor: React.FC = () => {
     selectAllServers(e.target.checked);
   };
 
-  // 修改保存对话框确认函数，添加自定义路径支持
+  // 保存对话框确认函数
   const handleConfirmSave = async () => {
     await handleSaveFile(customPath);
     setSaveDialogOpen(false);
@@ -126,7 +129,6 @@ export const MCPConfigEditor: React.FC = () => {
             {t('buttons.openFile')}
           </Button>
 
-          {/* 添加新建配置按钮 */}
           <Button
             variant="outline"
             onClick={createNewConfig}
@@ -134,32 +136,11 @@ export const MCPConfigEditor: React.FC = () => {
             {t('buttons.new')}
           </Button>
 
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="outline">
-                <FileUp className="h-4 w-4 mr-2" />
-                {t('buttons.import')}
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>{t('dialog.importConfig')}</DialogTitle>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="space-y-2">
-                  <Textarea
-                    placeholder={t('dialog.importPlaceholder')}
-                    value={importConfig}
-                    onChange={(e) => setImportConfig(e.target.value)}
-                    className="min-h-[200px]"
-                  />
-                </div>
-                <Button onClick={handleImportConfig}>
-                  {t('buttons.import')}
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
+          <ImportConfigDialog
+            importConfig={importConfig}
+            setImportConfig={setImportConfig}
+            handleImportConfig={handleImportConfig}
+          />
         </div>
       </div>
     )
@@ -193,7 +174,6 @@ export const MCPConfigEditor: React.FC = () => {
                 ) : t('buttons.openFile')}
               </Button>
 
-              {/* 添加新建配置按钮 */}
               <Button
                 variant="outline"
                 onClick={() => {
@@ -210,173 +190,55 @@ export const MCPConfigEditor: React.FC = () => {
                 {t('buttons.new')}
               </Button>
 
-              <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button
-                    variant="default"
-                    disabled={loading || !config}
-                  >
-                    {loading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        {t('buttons.processing')}
-                      </>
-                    ) : t('buttons.export')}
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>{t('dialog.selectConfigToExport')}</DialogTitle>
-                  </DialogHeader>
-                  <div className="py-4">
-                    <div className="flex items-center space-x-2 mb-4">
-                      <input
-                        type="checkbox"
-                        id="select-all"
-                        className="w-4 h-4"
-                        onChange={handleSelectAll}
-                        checked={Object.values(selectedServers).every(v => v)}
-                      />
-                      <label htmlFor="select-all" className="text-sm font-medium">
-                        {t('dialog.selectAll')}
-                      </label>
-                    </div>
-                    <div className="space-y-2 max-h-[30vh] overflow-y-auto">
-                      {config && Object.keys(config.mcpServers).map(serverName => (
-                        <div key={serverName} className="flex items-center space-x-2">
-                          <input
-                            type="checkbox"
-                            id={`server-${serverName}`}
-                            checked={selectedServers[serverName] || false}
-                            onChange={() => toggleServerSelection(serverName)}
-                            className="w-4 h-4"
-                          />
-                          <label htmlFor={`server-${serverName}`} className="text-sm">
-                            {serverName}
-                          </label>
-                        </div>
-                      ))}
-                    </div>
-                    {/* 新增：保存路径选择部分 */}
-                    <div className="mt-6 space-y-4">
-                      <h4 className="font-medium text-sm">{t('dialog.savePath')}</h4>
-                      {/* 当前路径 */}
-                      <div className="flex items-center space-x-2">
-                        <input
-                          type="radio"
-                          id="current-path"
-                          name="save-path"
-                          checked={!customPath}
-                          onChange={() => setCustomPath('')}
-                          className="w-4 h-4"
-                        />
-                        <label htmlFor="current-path" className="text-sm truncate">
-                          {currentPath || t('dialog.defaultPath')}
-                        </label>
-                      </div>
-                      {/* 历史路径 */}
-                      {pathHistory.length > 0 && (
-                        <div className="space-y-2 max-h-[20vh] overflow-y-auto border rounded p-2">
-                          <p className="text-xs text-muted-foreground mb-1">{t('dialog.recentPaths')}</p>
-                          {pathHistory.map((path, index) => (
-                            <div key={index} className="flex items-center space-x-2">
-                              <input
-                                type="radio"
-                                id={`path-${index}`}
-                                name="save-path"
-                                checked={customPath === path}
-                                onChange={() => setCustomPath(path)}
-                                className="w-4 h-4"
-                              />
-                              <label htmlFor={`path-${index}`} className="text-sm truncate">
-                                {path}
-                              </label>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                      {/* 添加自定义路径输入框 */}
-                      <div className="mt-4">
-                        <p className="text-xs text-muted-foreground mb-1">{t('dialog.customPath')}</p>
-                        <div className="flex gap-2">
-                          <Input
-                            value={customPath}
-                            onChange={(e) => {
-                              setCustomPath(e.target.value);
-                              if (e.target.value) {
-                                selectSavePath(e.target.value);
-                              }
-                            }}
-                            placeholder={t('dialog.enterCustomPath')}
-                          />
-                          <Button
-                            variant="outline"
-                            onClick={async () => {
-                              const result = await electronAPI.selectSavePath();
-                              if (result) {
-                                setCustomPath(result);
-                                selectSavePath(result); // 使用selectSavePath更新当前路径
-                              }
-                            }}
-                          >
-                            {t('buttons.browse')}
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex justify-end">
-                    <Button onClick={handleConfirmSave}>
-                      {t('buttons.confirmExport')}
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
+              <Button
+                variant="default"
+                disabled={loading || !config}
+                onClick={() => setSaveDialogOpen(true)}
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {t('buttons.processing')}
+                  </>
+                ) : t('buttons.export')}
+              </Button>
 
-              {/* 导入配置对话框保持不变 */}
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button variant="outline">
-                    <FileUp className="h-4 w-4 mr-2" />
-                    {t('buttons.import')}
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>{t('dialog.importConfig')}</DialogTitle>
-                  </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    <div className="space-y-2">
-                      <Textarea
-                        placeholder={t('dialog.importPlaceholder')}
-                        value={importConfig}
-                        onChange={(e) => setImportConfig(e.target.value)}
-                        className="min-h-[200px]"
-                      />
-                    </div>
-                    <Button onClick={handleImportConfig}>
-                      {t('buttons.import')}
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
+              {/* 使用提取的保存配置对话框 */}
+              <SaveConfigDialog
+                open={saveDialogOpen}
+                onOpenChange={setSaveDialogOpen}
+                selectedServers={selectedServers}
+                toggleServerSelection={toggleServerSelection}
+                handleSelectAll={handleSelectAll}
+                customPath={customPath}
+                setCustomPath={setCustomPath}
+                currentPath={currentPath}
+                selectSavePath={selectSavePath}
+                pathHistory={pathHistory}
+                serverNames={config ? Object.keys(config.mcpServers) : []}
+                onConfirm={handleConfirmSave}
+              />
+
+              {/* 使用提取的导入配置对话框 */}
+              <ImportConfigDialog
+                importConfig={importConfig}
+                setImportConfig={setImportConfig}
+                handleImportConfig={handleImportConfig}
+              />
+
+              {/* 路径历史记录管理对话框 */}
+              <PathHistoryDialog
+                pathHistory={pathHistory}
+                currentPath={currentPath}
+                onSelectPath={selectSavePath}
+                onRemovePath={removePathFromHistory}
+                onClearHistory={clearPathHistory}
+              />
             </div>
 
-            {/* 其余内容保持不变 */}
             <div className="flex items-center gap-2 app-region-no-drag">
-              <Input
-                placeholder={t('placeholders.newServerName')}
-                value={newServerName}
-                onChange={(e) => setNewServerName(e.target.value)}
-              />
-              <Button
-                variant="outline"
-                onClick={addNewServer}
-                disabled={!newServerName.trim()}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                {t('buttons.add')}
-              </Button>
+              {/* 使用新的添加服务器对话框组件 */}
+              <AddServerDialog onAddServer={addNewServer} />
               <ModeToggle />
             </div>
           </div>
@@ -403,127 +265,40 @@ export const MCPConfigEditor: React.FC = () => {
                     </span>
                   </CardTitle>
                   <div className="flex items-center gap-2">
-                    {/* 添加禁用开关 */}
                     <div className="flex items-center gap-2">
-                      <span className="text-sm text-muted-foreground">{t('fields.disabled')}</span>
+                      {/* <span className="text-sm text-muted-foreground">{t('fields.enabled')}</span> */}
                       <Switch
-                        checked={Boolean(serverConfig.disabled)}
+                        checked={!Boolean(serverConfig.disabled)}
                         onCheckedChange={(checked) => {
                           updateServerConfig(serverName, {
                             ...serverConfig,
-                            disabled: checked
+                            disabled: !checked
                           })
                         }}
                       />
                     </div>
                     <div className="">
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button variant="outline" size="sm" className="w-full">
-                            <Settings className="h-3 w-3 mr-1" />
-                            {t('buttons.editDetails')}
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
-                          <DialogHeader>
-                            <DialogTitle>{t('dialog.serverSettings')} - {serverName}</DialogTitle>
-                          </DialogHeader>
-                          <div className="grid gap-4 py-4 overflow-y-auto flex-1">
-                            <div className="space-y-4">
-                              <h4 className="font-medium">{t('dialog.serverType')}</h4>
-                              <Select
-                                value={getServerType(serverConfig)}
-                                onValueChange={(newType: ServerType) => {
-                                  let newConfig: ServerConfig
-                                  if (newType === ServerType.SSE) {
-                                    newConfig = {
-                                      url: '',
-                                      autoApprove: serverConfig.autoApprove || []
-                                    }
-                                  } else {
-                                    newConfig = {
-                                      command: newType as 'npx' | 'uvx' | 'node',
-                                      args: [],
-                                      env: {},
-                                      autoApprove: serverConfig.autoApprove || []
-                                    }
-                                  }
-                                  updateServerConfig(serverName, newConfig)
-                                }}
-                              >
-                                <SelectTrigger>
-                                  <SelectValue placeholder={t('dialog.selectServerType')} />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {Object.values(ServerType).map((type) => (
-                                    <SelectItem key={type} value={type}>
-                                      {serverTypeMap[type]}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-
-                              <div className="space-y-4 mt-6">
-                                <h4 className="font-medium">{t('dialog.serverConfig')}</h4>
-                                <div className="grid gap-4">
-                                  {Object.entries(serverConfig).map(([key, value]) => {
-                                    const fieldClass = cn(
-                                      `space-y-2 p-3 border rounded-md`,
-                                    );
-
-                                    return (
-                                      <div key={key} className={fieldClass}>
-                                        <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                                          {fieldNameMap[key] || key}
-                                        </label>
-                                        <ConfigFieldRenderer
-                                          serverName={serverName}
-                                          serverConfig={serverConfig}
-                                          fieldKey={key}
-                                          value={value}
-                                          isEditing={true}
-                                          onUpdateServerConfig={updateServerConfig}
-                                          onArrayItemChange={handleArrayItemChange}
-                                          onArrayItemMove={handleArrayItemMove}
-                                          onArrayItemDelete={handleArrayItemDelete}
-                                          onArrayItemAdd={handleArrayItemAdd}
-                                          onEnvChange={handleEnvChange}
-                                          onEnvDelete={handleEnvDelete}
-                                          onEnvAdd={handleEnvAdd}
-                                          onEnvKeyChange={handleEnvKeyChange}
-                                        />
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="flex justify-between gap-2 mt-6">
-                            <Button
-                              variant="destructive"
-                              onClick={() => deleteServer(serverName)}
-                            >
-                              <Trash className="h-4 w-4" />
-                              {t('buttons.delete')}
-                            </Button>
-                            <DialogTrigger asChild>
-                              <Button variant="outline">
-                                <Check className="h-4 w-4" />
-                                {t('buttons.ok')}
-                              </Button>
-                            </DialogTrigger>
-                          </div>
-                        </DialogContent>
-                      </Dialog>
+                      {/* 使用提取的服务器设置对话框 */}
+                      <ServerSettingsDialog
+                        serverName={serverName}
+                        serverConfig={serverConfig}
+                        updateServerConfig={updateServerConfig}
+                        deleteServer={deleteServer}
+                        handleArrayItemChange={handleArrayItemChange}
+                        handleArrayItemMove={handleArrayItemMove}
+                        handleArrayItemDelete={handleArrayItemDelete}
+                        handleArrayItemAdd={handleArrayItemAdd}
+                        handleEnvChange={handleEnvChange}
+                        handleEnvDelete={handleEnvDelete}
+                        handleEnvAdd={handleEnvAdd}
+                        handleEnvKeyChange={handleEnvKeyChange}
+                      />
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent className=''>
                   <div className="flex flex-col gap-2">
                     {Object.entries(serverConfig).map(([key, value]) => {
-                      // 跳过禁用字段，因为它已经在卡片头部显示为开关
                       if (key === 'disabled') return null;
                       return (
                         <div key={key} className="space-y-1">
@@ -545,7 +320,7 @@ export const MCPConfigEditor: React.FC = () => {
                             onEnvDelete={handleEnvDelete}
                             onEnvAdd={handleEnvAdd}
                             onEnvKeyChange={handleEnvKeyChange}
-                            renderDisabled={false} // 不再渲染disable字段
+                            renderDisabled={false}
                           />
                         </div>
                       );
@@ -555,7 +330,6 @@ export const MCPConfigEditor: React.FC = () => {
               </Card>
             ))}
           </div>
-
         </div>
       </div>
     </div>
