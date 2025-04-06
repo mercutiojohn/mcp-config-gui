@@ -14,15 +14,19 @@
     "url": "URL"
   },
   "buttons": {
-    "open": "Open File",
+    "openFile": "Open File",
     "save": "Save File",
+    "export": "Export Config",
     "import": "Import Config",
     "add": "Add Server",
     "delete": "Delete Server",
     "processing": "Processing...",
     "editDetails": "Edit Details",
     "close": "Close",
-    "ok": "OK"
+    "ok": "OK",
+    "confirmExport": "Confirm Export",
+    "new": "New Config",
+    "browse": "Browse"
   },
   "dialog": {
     "serverSettings": "Server Settings",
@@ -30,7 +34,11 @@
     "selectServerType": "Select Server Type",
     "importConfig": "Import Configuration",
     "importPlaceholder": "Please paste MCP configuration JSON, supports full config or single server config",
-    "serverConfig": "Server Configuration"
+    "serverConfig": "Server Configuration",
+    "selectConfigToExport": "Select Configuration to Export",
+    "selectAll": "Select All",
+    "savePath": "Save Path",
+    "defaultPath": "Default Path"
   },
   "placeholders": {
     "newServerName": "New Server Name"
@@ -41,4 +49,4 @@
     "openFileFailed": "Failed to open file: {{message}}",
     "saveFileFailed": "Failed to save file: {{message}}"
   }
-} 
+}

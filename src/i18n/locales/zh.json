@@ -14,15 +14,19 @@
     "url": "URL"
   },
   "buttons": {
-    "open": "打开文件",
+    "openFile": "打开文件",
     "save": "保存文件",
+    "export": "导出配置",
     "import": "导入配置",
     "add": "添加服务器",
     "delete": "删除服务器",
     "processing": "处理中...",
     "editDetails": "编辑详情",
     "close": "关闭",
-    "ok": "确定"
+    "ok": "确定",
+    "confirmExport": "确认导出",
+    "new": "新建配置",
+    "browse": "浏览"
   },
   "dialog": {
     "serverSettings": "服务器设置",
@@ -30,7 +34,14 @@
     "selectServerType": "选择服务器类型",
     "importConfig": "导入配置",
     "importPlaceholder": "请粘贴 MCP 配置 JSON，支持完整配置或单个服务器配置",
-    "serverConfig": "服务器配置"
+    "serverConfig": "服务器配置",
+    "selectConfigToExport": "选择要导出的配置",
+    "selectAll": "全选",
+    "savePath": "保存路径",
+    "defaultPath": "默认路径",
+    "recentPaths": "最近路径",
+    "customPath": "自定义路径",
+    "enterCustomPath": "输入自定义路径"
   },
   "placeholders": {
     "newServerName": "新服务器名称"
@@ -39,6 +50,11 @@
     "unknownCommandType": "未知命令类型: {{cmd}}",
     "invalidServerConfig": "无效的服务器配置",
     "openFileFailed": "打开文件失败：{{message}}",
-    "saveFileFailed": "保存文件失败：{{message}}"
+    "saveFileFailed": "保存文件失败：{{message}}",
+    "importConfigFailed": "导入配置失败：{{message}}"
+  },
+  "prompts": {
+    "replaceConfig": "是否替换当前配置？选择\"否\"将合并配置。",
+    "createNewConfig": "确定要创建新的配置吗？现有配置将被清除。"
   }
-} 
+}

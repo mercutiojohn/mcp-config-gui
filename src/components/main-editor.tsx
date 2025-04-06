@@ -22,6 +22,8 @@ import { Switch } from "@/components/ui/switch"
 export const MCPConfigEditor: React.FC = () => {
   const { t } = useTranslation()
   const [newServerName, setNewServerName] = useState('')
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+  const [customPath, setCustomPath] = useState(''); // 新增：自定义路径
   const {
     config,
     setConfig,
@@ -30,9 +32,16 @@ export const MCPConfigEditor: React.FC = () => {
     setError,
     importConfig,
     setImportConfig,
+    selectedServers,
+    toggleServerSelection,
+    selectAllServers,
     handleOpenFile,
     handleSaveFile,
-    handleImportConfig
+    handleImportConfig,
+    pathHistory,        // 新增：路径历史
+    currentPath,        // 读取当前路径
+    selectSavePath,     // 新增：选择路径方法
+    createNewConfig     // 新增：创建新配置方法
   } = useFileOperations();
 
   const { isMac } = useWindowControls();
@@ -94,6 +103,18 @@ export const MCPConfigEditor: React.FC = () => {
     handleEnvKeyChange
   } = useEnvOperations(updateServerConfig);
 
+  // 添加这个函数来处理全选/取消全选
+  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    selectAllServers(e.target.checked);
+  };
+
+  // 修改保存对话框确认函数，添加自定义路径支持
+  const handleConfirmSave = async () => {
+    await handleSaveFile(customPath);
+    setSaveDialogOpen(false);
+    setCustomPath(''); // 清空自定义路径
+  };
+
   if (!config) {
     return (
       <div className="flex flex-col items-center justify-center h-screen">
@@ -102,8 +123,17 @@ export const MCPConfigEditor: React.FC = () => {
             variant="default"
             onClick={handleOpenFile}
           >
-            {t('buttons.open')}
+            {t('buttons.openFile')}
           </Button>
+
+          {/* 添加新建配置按钮 */}
+          <Button
+            variant="outline"
+            onClick={createNewConfig}
+          >
+            {t('buttons.new')}
+          </Button>
+
           <Dialog>
             <DialogTrigger asChild>
               <Button variant="outline">
@@ -144,10 +174,8 @@ export const MCPConfigEditor: React.FC = () => {
         <div className={cn(
           "border-b py-4 w-full",
           isMac ? "vibrancy-header-custom" : "bg-background",
-          // "flex justify-center",
         )}>
           <div className={cn(
-            // "container",
             "px-4",
             "flex justify-between"
           )}>
@@ -162,20 +190,150 @@ export const MCPConfigEditor: React.FC = () => {
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     {t('buttons.processing')}
                   </>
-                ) : t('buttons.open')}
+                ) : t('buttons.openFile')}
               </Button>
+
+              {/* 添加新建配置按钮 */}
               <Button
-                variant="default"
-                onClick={handleSaveFile}
-                disabled={loading || !config}
+                variant="outline"
+                onClick={() => {
+                  if (config && Object.keys(config.mcpServers).length > 0) {
+                    if (window.confirm(t('prompts.createNewConfig') || '确定要创建新的配置吗？现有配置将被清除。')) {
+                      createNewConfig();
+                    }
+                  } else {
+                    createNewConfig();
+                  }
+                }}
+                disabled={loading}
               >
-                {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {t('buttons.processing')}
-                  </>
-                ) : t('buttons.save')}
+                {t('buttons.new')}
               </Button>
+
+              <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button
+                    variant="default"
+                    disabled={loading || !config}
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        {t('buttons.processing')}
+                      </>
+                    ) : t('buttons.export')}
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>{t('dialog.selectConfigToExport')}</DialogTitle>
+                  </DialogHeader>
+                  <div className="py-4">
+                    <div className="flex items-center space-x-2 mb-4">
+                      <input
+                        type="checkbox"
+                        id="select-all"
+                        className="w-4 h-4"
+                        onChange={handleSelectAll}
+                        checked={Object.values(selectedServers).every(v => v)}
+                      />
+                      <label htmlFor="select-all" className="text-sm font-medium">
+                        {t('dialog.selectAll')}
+                      </label>
+                    </div>
+                    <div className="space-y-2 max-h-[30vh] overflow-y-auto">
+                      {config && Object.keys(config.mcpServers).map(serverName => (
+                        <div key={serverName} className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            id={`server-${serverName}`}
+                            checked={selectedServers[serverName] || false}
+                            onChange={() => toggleServerSelection(serverName)}
+                            className="w-4 h-4"
+                          />
+                          <label htmlFor={`server-${serverName}`} className="text-sm">
+                            {serverName}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                    {/* 新增：保存路径选择部分 */}
+                    <div className="mt-6 space-y-4">
+                      <h4 className="font-medium text-sm">{t('dialog.savePath')}</h4>
+                      {/* 当前路径 */}
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="radio"
+                          id="current-path"
+                          name="save-path"
+                          checked={!customPath}
+                          onChange={() => setCustomPath('')}
+                          className="w-4 h-4"
+                        />
+                        <label htmlFor="current-path" className="text-sm truncate">
+                          {currentPath || t('dialog.defaultPath')}
+                        </label>
+                      </div>
+                      {/* 历史路径 */}
+                      {pathHistory.length > 0 && (
+                        <div className="space-y-2 max-h-[20vh] overflow-y-auto border rounded p-2">
+                          <p className="text-xs text-muted-foreground mb-1">{t('dialog.recentPaths')}</p>
+                          {pathHistory.map((path, index) => (
+                            <div key={index} className="flex items-center space-x-2">
+                              <input
+                                type="radio"
+                                id={`path-${index}`}
+                                name="save-path"
+                                checked={customPath === path}
+                                onChange={() => setCustomPath(path)}
+                                className="w-4 h-4"
+                              />
+                              <label htmlFor={`path-${index}`} className="text-sm truncate">
+                                {path}
+                              </label>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {/* 添加自定义路径输入框 */}
+                      <div className="mt-4">
+                        <p className="text-xs text-muted-foreground mb-1">{t('dialog.customPath')}</p>
+                        <div className="flex gap-2">
+                          <Input
+                            value={customPath}
+                            onChange={(e) => {
+                              setCustomPath(e.target.value);
+                              if (e.target.value) {
+                                selectSavePath(e.target.value);
+                              }
+                            }}
+                            placeholder={t('dialog.enterCustomPath')}
+                          />
+                          <Button
+                            variant="outline"
+                            onClick={async () => {
+                              const result = await electronAPI.selectSavePath();
+                              if (result) {
+                                setCustomPath(result);
+                                selectSavePath(result); // 使用selectSavePath更新当前路径
+                              }
+                            }}
+                          >
+                            {t('buttons.browse')}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex justify-end">
+                    <Button onClick={handleConfirmSave}>
+                      {t('buttons.confirmExport')}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+
+              {/* 导入配置对话框保持不变 */}
               <Dialog>
                 <DialogTrigger asChild>
                   <Button variant="outline">
@@ -203,6 +361,8 @@ export const MCPConfigEditor: React.FC = () => {
                 </DialogContent>
               </Dialog>
             </div>
+
+            {/* 其余内容保持不变 */}
             <div className="flex items-center gap-2 app-region-no-drag">
               <Input
                 placeholder={t('placeholders.newServerName')}
