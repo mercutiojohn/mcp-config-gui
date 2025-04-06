@@ -8,9 +8,10 @@ import { Plus } from "lucide-react";
 
 interface AddServerDialogProps {
   onAddServer: (serverName: string) => void;
+  children: React.ReactNode;
 }
 
-export function AddServerDialog({ onAddServer }: AddServerDialogProps) {
+export function AddServerDialog({ onAddServer, children }: AddServerDialogProps) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [newServerName, setNewServerName] = useState('');
@@ -26,10 +27,7 @@ export function AddServerDialog({ onAddServer }: AddServerDialogProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline">
-          <Plus className="h-4 w-4 mr-2" />
-          {t('buttons.add')}
-        </Button>
+        {children}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>

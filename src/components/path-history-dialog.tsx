@@ -19,6 +19,7 @@ interface PathHistoryDialogProps {
   onSelectPath: (path: string) => void;
   onRemovePath: (path: string) => void;
   onClearHistory: () => void;
+  children: React.ReactNode,
 }
 
 export const PathHistoryDialog: React.FC<PathHistoryDialogProps> = ({
@@ -26,7 +27,8 @@ export const PathHistoryDialog: React.FC<PathHistoryDialogProps> = ({
   currentPath,
   onSelectPath,
   onRemovePath,
-  onClearHistory
+  onClearHistory,
+  children
 }) => {
   const { t } = useTranslation();
   const [open, setOpen] = React.useState(false);
@@ -34,10 +36,7 @@ export const PathHistoryDialog: React.FC<PathHistoryDialogProps> = ({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline">
-          <History className="h-4 w-4 mr-2" />
-          {t('buttons.pathHistory')}
-        </Button>
+        {children}
       </DialogTrigger>
       <DialogContent className="overflow-hidden">
         <DialogHeader>

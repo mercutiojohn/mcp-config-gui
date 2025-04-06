@@ -9,22 +9,21 @@ interface ImportConfigDialogProps {
   importConfig: string;
   setImportConfig: (value: string) => void;
   handleImportConfig: () => void;
+  children: React.ReactNode;
 }
 
 export const ImportConfigDialog: React.FC<ImportConfigDialogProps> = ({
   importConfig,
   setImportConfig,
-  handleImportConfig
+  handleImportConfig,
+  children,
 }) => {
   const { t } = useTranslation();
 
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="outline">
-          <FileUp className="h-4 w-4 mr-2" />
-          {t('buttons.import')}
-        </Button>
+        {children}
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>

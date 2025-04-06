@@ -41,11 +41,11 @@ export const SaveConfigDialog: React.FC<SaveConfigDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="overflow-hidden flex flex-col !max-w-screen-lg">
         <DialogHeader>
           <DialogTitle>{t('dialog.selectConfigToExport')}</DialogTitle>
         </DialogHeader>
-        <div className="py-4">
+        <div className="py-4 overflow-y-auto">
           <div className="flex items-center space-x-2 mb-4">
             <Checkbox
               id="select-all"

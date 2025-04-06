@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Loader2, Plus, FileUp } from "lucide-react"
+import { Loader2, Plus, FileUp, History, Trash2, Import, File } from "lucide-react"
 import { ServerConfig, getServerType, serverTypeMap, fieldNameMap } from '@/types/mcp-config'
 import { cn } from '@/lib/utils'
 import { ConfigFieldRenderer } from './config-field-renderer'
@@ -21,6 +21,9 @@ import { SaveConfigDialog } from './dialogs/save-config-dialog'
 import { ImportConfigDialog } from './dialogs/import-config-dialog'
 import { ServerSettingsDialog } from './dialogs/server-settings-dialog'
 import { AddServerDialog } from './dialogs/add-server-dialog'
+
+// 使用新的服务器操作 hook
+import { useServerOperations } from '@/hooks/use-server-operations';
 
 export const MCPConfigEditor: React.FC = () => {
   const { t } = useTranslation()
@@ -50,46 +53,12 @@ export const MCPConfigEditor: React.FC = () => {
 
   const { isMac } = useWindowControls();
 
-  const addNewServer = (serverName: string) => {
-    if (!config || !serverName.trim()) return
-    setConfig(prev => {
-      if (!prev) return prev
-      return {
-        ...prev,
-        mcpServers: {
-          ...prev.mcpServers,
-          [serverName]: {
-            command: 'npx',
-            args: [],
-            autoApprove: [],
-            env: {}
-          }
-        }
-      }
-    })
-  }
-
-  const deleteServer = (serverName: string) => {
-    setConfig(prev => {
-      if (!prev) return prev
-      const newConfig = { ...prev }
-      delete newConfig.mcpServers[serverName]
-      return newConfig
-    })
-  }
-
-  const updateServerConfig = (serverName: string, newConfig: ServerConfig) => {
-    setConfig(prev => {
-      if (!prev) return prev
-      return {
-        ...prev,
-        mcpServers: {
-          ...prev.mcpServers,
-          [serverName]: newConfig
-        }
-      }
-    })
-  }
+  // 使用新的服务器操作 hook
+  const {
+    addNewServer,
+    deleteServer,
+    updateServerConfig
+  } = useServerOperations(config, setConfig);
 
   // 使用自定义 hooks
   const {
@@ -106,7 +75,6 @@ export const MCPConfigEditor: React.FC = () => {
     handleEnvKeyChange
   } = useEnvOperations(updateServerConfig);
 
-  // 添加这个函数来处理全选/取消全选
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
     selectAllServers(e.target.checked);
   };
@@ -133,7 +101,7 @@ export const MCPConfigEditor: React.FC = () => {
             variant="outline"
             onClick={createNewConfig}
           >
-            {t('buttons.new')}
+            {t('buttons.newConfig')}
           </Button>
 
           <ImportConfigDialog
@@ -161,6 +129,7 @@ export const MCPConfigEditor: React.FC = () => {
             "flex justify-between"
           )}>
             <div className="flex gap-2 app-region-no-drag">
+              {/* 打开文件对话框 */}
               <Button
                 variant="outline"
                 onClick={handleOpenFile}
@@ -171,11 +140,28 @@ export const MCPConfigEditor: React.FC = () => {
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     {t('buttons.processing')}
                   </>
-                ) : t('buttons.openFile')}
+                ) : (
+                  <>
+                    <File className="mr-2 h-4 w-4" />
+                    {t('buttons.importConfigJson')}
+                  </>
+                )}
               </Button>
 
+              {/* 导入配置对话框 */}
+              <ImportConfigDialog
+                importConfig={importConfig}
+                setImportConfig={setImportConfig}
+                handleImportConfig={handleImportConfig}
+              >
+                <Button variant="outline">
+                  <Import className="h-4 w-4" />
+                  {t('buttons.pasteConfig')}
+                </Button>
+              </ImportConfigDialog>
+
               <Button
-                variant="outline"
+                variant="destructive"
                 onClick={() => {
                   if (config && Object.keys(config.mcpServers).length > 0) {
                     if (window.confirm(t('prompts.createNewConfig') || '确定要创建新的配置吗？现有配置将被清除。')) {
@@ -187,7 +173,17 @@ export const MCPConfigEditor: React.FC = () => {
                 }}
                 disabled={loading}
               >
-                {t('buttons.new')}
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {t('buttons.processing')}
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    {t('buttons.clearConfig')}
+                  </>
+                )}
               </Button>
 
               <Button
@@ -203,7 +199,7 @@ export const MCPConfigEditor: React.FC = () => {
                 ) : t('buttons.export')}
               </Button>
 
-              {/* 使用提取的保存配置对话框 */}
+              {/* 保存配置对话框 */}
               <SaveConfigDialog
                 open={saveDialogOpen}
                 onOpenChange={setSaveDialogOpen}
@@ -219,13 +215,6 @@ export const MCPConfigEditor: React.FC = () => {
                 onConfirm={handleConfirmSave}
               />
 
-              {/* 使用提取的导入配置对话框 */}
-              <ImportConfigDialog
-                importConfig={importConfig}
-                setImportConfig={setImportConfig}
-                handleImportConfig={handleImportConfig}
-              />
-
               {/* 路径历史记录管理对话框 */}
               <PathHistoryDialog
                 pathHistory={pathHistory}
@@ -233,13 +222,22 @@ export const MCPConfigEditor: React.FC = () => {
                 onSelectPath={selectSavePath}
                 onRemovePath={removePathFromHistory}
                 onClearHistory={clearPathHistory}
-              />
+              >
+                <Button variant="outline">
+                  <History className="h-4 w-4 mr-2" />
+                  {t('buttons.pathHistory')}
+                </Button>
+              </PathHistoryDialog>
             </div>
 
             <div className="flex items-center gap-2 app-region-no-drag">
-              {/* 使用新的添加服务器对话框组件 */}
-              <AddServerDialog onAddServer={addNewServer} />
-              <ModeToggle />
+              {/* 添加 MCP 服务器对话框 */}
+              <AddServerDialog onAddServer={addNewServer}>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  {t('buttons.add')}
+                </Button>
+              </AddServerDialog>
             </div>
           </div>
         </div>
