@@ -1,22 +1,22 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function (o, m, k, k2) {
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
     if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-        desc = { enumerable: true, get: function () { return m[k]; } };
+      desc = { enumerable: true, get: function() { return m[k]; } };
     }
     Object.defineProperty(o, k2, desc);
-}) : (function (o, m, k, k2) {
+}) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
 }));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function (o, v) {
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
     Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function (o, v) {
+}) : function(o, v) {
     o["default"] = v;
 });
 var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function (o) {
+    var ownKeys = function(o) {
         ownKeys = Object.getOwnPropertyNames || function (o) {
             var ar = [];
             for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
@@ -139,12 +139,12 @@ else {
         win.webContents.on('did-finish-load', () => {
             win.webContents.send('ready');
             // 初始化时发送当前系统主题
-            // console.log('原生主题变化', electron_1.nativeTheme.shouldUseDarkColors ? 'dark' : 'light');
+            // console.log('原生主题变化', nativeTheme.shouldUseDarkColors ? 'dark' : 'light')
             win.webContents.send('native-theme-updated', electron_1.nativeTheme.shouldUseDarkColors ? 'dark' : 'light');
         });
         // 监听原生主题变化
         electron_1.nativeTheme.on('updated', () => {
-            // console.log('原生主题变化', electron_1.nativeTheme.shouldUseDarkColors ? 'dark' : 'light');
+            // console.log('原生主题变化', nativeTheme.shouldUseDarkColors ? 'dark' : 'light')
             win.webContents.send('native-theme-updated', electron_1.nativeTheme.shouldUseDarkColors ? 'dark' : 'light');
         });
         // 添加主题相关的 IPC 处理器

@@ -47,12 +47,12 @@ function App() {
           // </div>
           <div className={cn(
             "h-header border-b",
-            isMac ? "pl-15" : ""
+            isMac ? "pl-15" : "",
+            isMac ? "vibrancy-header-custom" : "bg-background"
           )}>
             <TopBar className={cn(
               "h-full",
               "px-4 w-full",
-              isMac ? "vibrancy-header-custom" : "bg-background"
             )} />
           </div>
         )}

@@ -81,10 +81,10 @@ export interface NodeServerConfig extends BaseCommandServerConfig {
 }
 
 // Union type for all possible server configurations
-export type ServerConfig = 
-    | SSEServerConfig 
-    | NPXServerConfig 
-    | UVXServerConfig 
+export type ServerConfig =
+    | SSEServerConfig
+    | NPXServerConfig
+    | UVXServerConfig
     | NodeServerConfig;
 
 // Main configuration type
@@ -107,7 +107,8 @@ export function getServerType(config: ServerConfig): ServerType {
             case 'node':
                 return ServerType.NODE;
             default:
-                throw new Error(i18next.t('errors.unknownCommandType', { cmd }));
+                // throw new Error(i18next.t('errors.unknownCommandType', { cmd }));
+                return cmd;
         }
     }
     throw new Error(i18next.t('errors.invalidServerConfig'));
