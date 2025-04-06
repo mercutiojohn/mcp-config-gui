@@ -117,13 +117,13 @@ if (!gotTheLock) {
     win.webContents.on('did-finish-load', () => {
       win.webContents.send('ready')
       // 初始化时发送当前系统主题
-      console.log('原生主题变化', nativeTheme.shouldUseDarkColors ? 'dark' : 'light')
+      // console.log('原生主题变化', nativeTheme.shouldUseDarkColors ? 'dark' : 'light')
       win.webContents.send('native-theme-updated', nativeTheme.shouldUseDarkColors ? 'dark' : 'light')
     })
 
     // 监听原生主题变化
     nativeTheme.on('updated', () => {
-      console.log('原生主题变化', nativeTheme.shouldUseDarkColors ? 'dark' : 'light')
+      // console.log('原生主题变化', nativeTheme.shouldUseDarkColors ? 'dark' : 'light')
       win.webContents.send('native-theme-updated', nativeTheme.shouldUseDarkColors ? 'dark' : 'light')
     })
 
