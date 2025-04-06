@@ -8,6 +8,7 @@ const STORAGE_KEYS = {
   CONFIG: 'mcp-config',
   CURRENT_PATH: 'mcp-config-path',
   PATH_MAPPINGS: 'mcp-path-mappings', // 新增：路径映射存储
+  PATH_HISTORY: 'mcp-path-history', // 新增：路径历史记录存储
 };
 
 // 为配置生成唯一ID
@@ -34,6 +35,7 @@ export const useFileOperations = () => {
       const savedConfig = localStorage.getItem(STORAGE_KEYS.CONFIG);
       const savedPath = localStorage.getItem(STORAGE_KEYS.CURRENT_PATH);
       const savedPathMappings = localStorage.getItem(STORAGE_KEYS.PATH_MAPPINGS);
+      const savedPathHistory = localStorage.getItem(STORAGE_KEYS.PATH_HISTORY);
 
       if (savedConfig) {
         const parsedConfig = JSON.parse(savedConfig);
@@ -55,12 +57,19 @@ export const useFileOperations = () => {
 
       if (savedPathMappings) {
         setPathMappings(JSON.parse(savedPathMappings));
+      }
 
-        // 提取所有保存过的路径到历史记录
+      // 加载路径历史记录
+      if (savedPathHistory) {
+        setPathHistory(JSON.parse(savedPathHistory));
+      } else if (savedPathMappings) {
+        // 兼容旧版：如果没有保存过路径历史，从路径映射中提取
         const mappings = JSON.parse(savedPathMappings);
         const paths = Object.values(mappings).filter(Boolean) as string[];
         const uniquePaths = Array.from(new Set(paths));
         setPathHistory(uniquePaths);
+        // 顺便保存一次
+        localStorage.setItem(STORAGE_KEYS.PATH_HISTORY, JSON.stringify(uniquePaths));
       }
     } catch (err) {
       console.error('Failed to load config from localStorage:', err);
@@ -85,13 +94,15 @@ export const useFileOperations = () => {
   useEffect(() => {
     if (Object.keys(pathMappings).length > 0) {
       localStorage.setItem(STORAGE_KEYS.PATH_MAPPINGS, JSON.stringify(pathMappings));
-
-      // 更新路径历史
-      const paths = Object.values(pathMappings).filter(Boolean) as string[];
-      const uniquePaths = Array.from(new Set(paths));
-      setPathHistory(uniquePaths);
     }
   }, [pathMappings]);
+
+  // 当路径历史变化时保存到本地存储
+  useEffect(() => {
+    if (pathHistory.length > 0) {
+      localStorage.setItem(STORAGE_KEYS.PATH_HISTORY, JSON.stringify(pathHistory));
+    }
+  }, [pathHistory]);
 
   // 更新路径映射
   const updatePathMapping = (newConfig: MCPConfig, path: string) => {
@@ -100,6 +111,17 @@ export const useFileOperations = () => {
       ...prev,
       [configId]: path
     }));
+  };
+
+  // 更新路径历史记录
+  const updatePathHistory = (path: string) => {
+    if (!path) return;
+
+    setPathHistory(prev => {
+      // 如果路径已存在，不重复添加
+      if (prev.includes(path)) return prev;
+      return [...prev, path];
+    });
   };
 
   // 获取配置对应的保存路径
@@ -162,6 +184,8 @@ export const useFileOperations = () => {
         setCurrentPath(result.path);
         // 更新路径映射
         updatePathMapping(parsedConfig, result.path);
+        // 更新路径历史
+        updatePathHistory(result.path);
       }
     } catch (err) {
       setError(t('errors.openFileFailed', { message: (err as Error).message }));
@@ -198,15 +222,11 @@ export const useFileOperations = () => {
         path: savePath,
       });
 
-      // 如果保存到新路径，更新路径映射
+      // 如果保存到新路径，更新路径映射和历史
       if (saveResult && saveResult.path) {
         setCurrentPath(saveResult.path);
         updatePathMapping(selectedConfig, saveResult.path);
-
-        // 如果是新路径，添加到历史记录
-        if (!pathHistory.includes(saveResult.path)) {
-          setPathHistory(prev => [...prev, saveResult.path]);
-        }
+        updatePathHistory(saveResult.path);
       }
     } catch (err) {
       setError(t('errors.saveFileFailed', { message: (err as Error).message }));
@@ -311,8 +331,9 @@ export const useFileOperations = () => {
   const clearStoredConfig = () => {
     localStorage.removeItem(STORAGE_KEYS.CONFIG);
     localStorage.removeItem(STORAGE_KEYS.CURRENT_PATH);
-    // 可以选择是否清除路径映射
+    // 可以选择是否清除路径映射和历史
     // localStorage.removeItem(STORAGE_KEYS.PATH_MAPPINGS);
+    // localStorage.removeItem(STORAGE_KEYS.PATH_HISTORY);
     setConfig(null);
     setCurrentPath('');
   };
@@ -338,6 +359,7 @@ export const useFileOperations = () => {
     setCurrentPath,
     pathMappings,
     pathHistory,
+    updatePathHistory, // 返回新函数供外部使用
     loading,
     error,
     setError,
