@@ -119,7 +119,7 @@ export const MCPConfigEditor: React.FC = () => {
       <div className={cn(
         "mx-auto relative flex flex-col h-[calc(100vh-theme(height.header))]",
       )}>
-
+        {/* 顶栏 */}
         <div className={cn(
           "border-b py-4 w-full",
           isMac ? "vibrancy-header-custom" : "bg-background",
@@ -211,7 +211,7 @@ export const MCPConfigEditor: React.FC = () => {
                 currentPath={currentPath}
                 selectSavePath={selectSavePath}
                 pathHistory={pathHistory}
-                serverNames={config ? Object.keys(config.mcpServers) : []}
+                serverNames={config && config.mcpServers ? Object.keys(config.mcpServers) : []}
                 onConfirm={handleConfirmSave}
               />
 
@@ -241,6 +241,7 @@ export const MCPConfigEditor: React.FC = () => {
             </div>
           </div>
         </div>
+        {/* 列表 */}
         <div className={cn(
           "py-6 px-4 flex-1 overflow-y-auto",
           isMac ? "vibrancy-content-custom" : "bg-background",
@@ -253,7 +254,7 @@ export const MCPConfigEditor: React.FC = () => {
           <div className={cn(
             "grid grid-cols-2 gap-4",
           )}>
-            {Object.entries(config.mcpServers).map(([serverName, serverConfig]) => (
+            {Object.entries(config && config.mcpServers ? config.mcpServers : {})?.map(([serverName, serverConfig]) => (
               <Card key={serverName}>
                 <CardHeader className="flex flex-row items-center justify-between pb-2 !pt-1">
                   <CardTitle className="text-lg font-bold truncate">
